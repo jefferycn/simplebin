@@ -63,11 +63,11 @@ class ContentService(
         Content(
             id = id,
             body = linkTo<ContentController> {
-                getContentRaw(id)
+                getContentById(id)
             }.toString()
         ).add(
             linkTo<ContentController> {
-                getContent(id)
+                getContentJsonById(id)
             }.withSelfRel()
         )
     )
@@ -82,14 +82,14 @@ class ContentService(
                         body = if (contentType == MediaType.TEXT_PLAIN_VALUE && file.length() < 1024) {
                             file.readText()
                         } else linkTo<ContentController> {
-                            getContent(id)
+                            getContentJsonById(id)
                         }.toString()
                     ).add(
                         linkTo<ContentController> {
-                            getContent(id)
+                            getContentJsonById(id)
                         }.withSelfRel(),
                         linkTo<ContentController> {
-                            getContentRaw(id)
+                            getContentById(id)
                         }.withRel { "raw" }
                     )
                 }
@@ -121,7 +121,7 @@ class ContentService(
             MediaType.TEXT_PLAIN_VALUE -> ResponseEntity.ok().body(file.readBytes())
             else -> ResponseEntity.ok().body(
                 linkTo<ContentController> {
-                    getContent(file.name)
+                    getContentJsonById(file.name)
                 }.toString().toByteArray()
             )
         }

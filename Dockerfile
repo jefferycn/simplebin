@@ -1,5 +1,6 @@
 FROM bellsoft/liberica-openjdk-alpine:19
 ENV DATA_DIR=/data
+ENV TOKEN=""
 RUN addgroup -S spring && \
     adduser -S spring -G spring && \
     mkdir ${DATA_DIR} && \

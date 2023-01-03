@@ -8,5 +8,6 @@ import org.springframework.context.annotation.Configuration
 @ConfigurationProperties("simplebin")
 @EnableConfigurationProperties
 class AppConfig(
-    var path: String = ""
+    var path: String = "",
+    var token: String = ""
 )

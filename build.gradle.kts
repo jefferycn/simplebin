@@ -18,6 +18,9 @@ repositories {
 }
 
 dependencies {
+    runtimeOnly("org.aspectj:aspectjweaver:1.9.19")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("org.springframework.boot:spring-boot-starter-hateoas")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")

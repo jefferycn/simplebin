@@ -23,27 +23,19 @@ interface ContentController {
         produces = ["text/html;charset=UTF-8"]
     )
     @ResponseStatus(HttpStatus.OK)
-    fun getContentBrowser(
-        @RequestHeader(AUTHORIZATION, required = false) authHeader: String?
-    ): HttpEntity<ByteArray>
+    fun getContentBrowser(): HttpEntity<ByteArray>
 
     @GetMapping("/")
     @ResponseStatus(HttpStatus.OK)
-    fun getContentLatest(
-        @RequestHeader(AUTHORIZATION, required = false) authHeader: String?
-    ): HttpEntity<Content>
+    fun getContentLatest(): HttpEntity<Content>
 
     @GetMapping("/plain")
     @ResponseStatus(HttpStatus.OK)
-    fun getContentPlain(
-        @RequestHeader(AUTHORIZATION, required = false) authHeader: String?
-    ): HttpEntity<ByteArray>
+    fun getContentPlain(): HttpEntity<ByteArray>
 
     @GetMapping("/json")
     @ResponseStatus(HttpStatus.OK)
-    fun getContentJson(
-        @RequestHeader(AUTHORIZATION, required = false) authHeader: String?
-    ): HttpEntity<Content>
+    fun getContentJson(): HttpEntity<Content>
 
     @GetMapping(
         "/{id}",

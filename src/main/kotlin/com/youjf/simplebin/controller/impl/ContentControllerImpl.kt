@@ -16,28 +16,20 @@ class ContentControllerImpl(
     @Autowired val contentService: ContentService
 ) : ContentController {
     @Secured
-    override fun getContentBrowser(
-        @AuthHeader authHeader: String?
-    ) = contentService.getLatestContent()?.let {
+    override fun getContentBrowser() = contentService.getLatestContent()?.let {
         contentService.getRawBody(it)
     } ?: ResponseEntity.notFound().build()
 
     @Secured
-    override fun getContentLatest(
-        @AuthHeader authHeader: String?
-    ) = contentService.getLatestContent()?.let {
+    override fun getContentLatest() = contentService.getLatestContent()?.let {
         contentService.getContentBody(it)
     } ?: ResponseEntity.notFound().build()
 
     @Secured
-    override fun getContentJson(
-        @AuthHeader authHeader: String?
-    ) = getContentLatest(authHeader)
+    override fun getContentJson() = getContentLatest()
 
     @Secured
-    override fun getContentPlain(
-        @AuthHeader authHeader: String?
-    ): HttpEntity<ByteArray> = contentService.getLatestContent()?.let {
+    override fun getContentPlain(): HttpEntity<ByteArray> = contentService.getLatestContent()?.let {
         contentService.getPlainBody(it)
     } ?: ResponseEntity.notFound().build()
 

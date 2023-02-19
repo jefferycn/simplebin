@@ -11,5 +11,5 @@ data class Content(
     var type: String? = null,
 
     @field:JsonProperty("body")
-    var body: String? = null
+    var body: String? = null,
 ) : RepresentationModel<Content>()

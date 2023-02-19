@@ -9,5 +9,5 @@ import org.springframework.context.annotation.Configuration
 @EnableConfigurationProperties
 class AppConfig(
     var path: String = "",
-    var token: String = ""
+    var token: String = "",
 )

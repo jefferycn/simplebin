@@ -16,7 +16,7 @@ import org.springframework.util.StringUtils
 @Aspect
 @Service
 class SecurityService(
-    @Autowired val properties: AppConfig
+    @Autowired val properties: AppConfig,
 ) {
     @Around("securedWithToken(secured, authHeader)")
     fun permissionValidator(call: ProceedingJoinPoint, secured: Secured, authHeader: String?): Any =
@@ -25,20 +25,28 @@ class SecurityService(
                 if (authToken != properties.token) {
                     ResponseEntity<ByteArray>(
                         HttpHeaders(),
-                        HttpStatus.UNAUTHORIZED
+                        HttpStatus.UNAUTHORIZED,
                     )
-                } else call.proceed()
+                } else {
+                    call.proceed()
+                }
             } ?: ResponseEntity<ByteArray>(
                 HttpHeaders(),
-                HttpStatus.UNAUTHORIZED
+                HttpStatus.UNAUTHORIZED,
             )
-        } else call.proceed()
+        } else {
+            call.proceed()
+        }
 
     private fun getAuthorizationWithoutBearer(authHeader: String?) = if (StringUtils.startsWithIgnoreCase(
             authHeader,
-            "Bearer "
+            "Bearer ",
         )
-    ) authHeader?.substring("Bearer ".length) else authHeader
+    ) {
+        authHeader?.substring("Bearer ".length)
+    } else {
+        authHeader
+    }
 
     @Pointcut("@annotation(secured) && args(authHeader,..)", argNames = "secured")
     fun securedWithToken(secured: Secured, authHeader: String?) {

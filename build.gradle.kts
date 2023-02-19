@@ -28,6 +28,7 @@ dependencies {
     implementation("commons-validator:commons-validator:1.7")
     implementation("org.apache.tika:tika-core:2.6.0")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("io.mockk:mockk:1.12.0")
 }
 
 tasks.withType<KotlinCompile> {
@@ -44,8 +45,8 @@ tasks {
                 mapOf(
                     "Main-Class" to "com.youjf.simplebin.SimplebinApplicationKt",
                     "ImplementationTitle" to project.name,
-                    "Implementation-Version" to project.version
-                )
+                    "Implementation-Version" to project.version,
+                ),
             )
         }
     }

@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile
 
 @Component
 class ContentControllerImpl(
-    @Autowired val contentService: ContentService
+    @Autowired val contentService: ContentService,
 ) : ContentController {
     @Secured
     override fun getContentBrowser() = contentService.getLatestContent()?.let {
@@ -44,12 +44,12 @@ class ContentControllerImpl(
     @Secured
     override fun createContent(
         @AuthHeader authHeader: String?,
-        request: String
+        request: String,
     ) = contentService.createContent(request)
 
     @Secured
     override fun createContentFile(
         @AuthHeader authHeader: String?,
-        file: MultipartFile
+        file: MultipartFile,
     ) = contentService.createContentFile(file)
 }

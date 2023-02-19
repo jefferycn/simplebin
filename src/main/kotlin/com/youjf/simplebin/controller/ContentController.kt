@@ -20,7 +20,7 @@ interface ContentController {
     @GetMapping(
         "/",
         headers = ["Accept=text/html"],
-        produces = ["text/html;charset=UTF-8"]
+        produces = ["text/html;charset=UTF-8"],
     )
     @ResponseStatus(HttpStatus.OK)
     fun getContentBrowser(): HttpEntity<ByteArray>
@@ -39,35 +39,35 @@ interface ContentController {
 
     @GetMapping(
         "/{id}",
-        produces = ["text/html;charset=UTF-8"]
+        produces = ["text/html;charset=UTF-8"],
     )
     @ResponseStatus(HttpStatus.OK)
     fun getContentById(
-        @PathVariable("id") id: String
+        @PathVariable("id") id: String,
     ): HttpEntity<ByteArray>
 
     @GetMapping("/{id}/json")
     @ResponseStatus(HttpStatus.OK)
     fun getContentJsonById(
-        @PathVariable("id") id: String
+        @PathVariable("id") id: String,
     ): HttpEntity<Content>
 
     @PostMapping("/")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContent(
         @RequestHeader(AUTHORIZATION, required = false) authHeader: String?,
-        @RequestBody request: String
+        @RequestBody request: String,
     ): HttpEntity<Content>
 
     @PostMapping(
         "/",
         consumes = [
-            MediaType.MULTIPART_FORM_DATA_VALUE
-        ]
+            MediaType.MULTIPART_FORM_DATA_VALUE,
+        ],
     )
     @ResponseStatus(HttpStatus.CREATED)
     fun createContentFile(
         @RequestHeader(AUTHORIZATION, required = false) authHeader: String?,
-        @RequestParam("file") file: MultipartFile
+        @RequestParam("file") file: MultipartFile,
     ): HttpEntity<Content>
 }

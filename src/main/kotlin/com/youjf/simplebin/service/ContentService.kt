@@ -17,31 +17,37 @@ import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.net.URI
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.io.path.getLastModifiedTime
-import kotlin.io.path.isDirectory
+import java.nio.file.attribute.BasicFileAttributes
 
 @Service
 class ContentService(
-    @Autowired val properties: AppConfig
+    @Autowired val properties: AppConfig,
 ) {
-    fun getLatestContent() = Paths.get(properties.path).let {
-        Files.list(it).filter { file -> !file.isDirectory() }.max(
-            Comparator.comparingLong { file ->
-                file.getLastModifiedTime().toMillis()
-            }
-        ).let { file ->
-            if (file.isPresent) {
-                file.get().toFile()
-            } else null
+    private fun getMostRecentFile(folder: Path): Path? {
+        val filter = Files.newDirectoryStream(folder) { p -> p.toFile().isFile }
+        return filter.use { dir ->
+            dir.asSequence()
+                .map {
+                    Pair(it, Files.readAttributes(it, BasicFileAttributes::class.java))
+                }
+                .maxByOrNull {
+                    it.second.lastModifiedTime().toInstant()
+                }
+                ?.first
         }
     }
+
+    fun getLatestContent() = getMostRecentFile(Paths.get(properties.path))?.toFile()
 
     fun getContent(id: String) = properties.path.let { path ->
         File("$path/$id").let {
             if (it.exists()) {
                 it
-            } else null
+            } else {
+                null
+            }
         }
     }
 
@@ -64,12 +70,12 @@ class ContentService(
             id = id,
             body = linkTo<ContentController> {
                 getContentById(id)
-            }.toString()
+            }.toString(),
         ).add(
             linkTo<ContentController> {
                 getContentJsonById(id)
-            }.withSelfRel()
-        )
+            }.withSelfRel(),
+        ),
     )
 
     fun getContentBody(file: File): ResponseEntity<Content> = ResponseEntity.ok()
@@ -81,19 +87,21 @@ class ContentService(
                         type = Tika().detect(file),
                         body = if (contentType == MediaType.TEXT_PLAIN_VALUE && file.length() < 1024) {
                             file.readText()
-                        } else linkTo<ContentController> {
-                            getContentJsonById(id)
-                        }.toString()
+                        } else {
+                            linkTo<ContentController> {
+                                getContentJsonById(id)
+                            }.toString()
+                        },
                     ).add(
                         linkTo<ContentController> {
                             getContentJsonById(id)
                         }.withSelfRel(),
                         linkTo<ContentController> {
                             getContentById(id)
-                        }.withRel { "raw" }
+                        }.withRel { "raw" },
                     )
                 }
-            }
+            },
         )
 
     fun getRawBody(file: File): ResponseEntity<ByteArray> = Tika().detect(file).let { contentType ->
@@ -103,14 +111,17 @@ class ContentService(
                     HttpHeaders().apply {
                         location = URI(file.readText())
                     },
-                    HttpStatus.FOUND
+                    HttpStatus.FOUND,
                 )
-            } else ResponseEntity.ok().body(file.readBytes())
+            } else {
+                ResponseEntity.ok().body(file.readBytes())
+            }
+
             else ->
                 ResponseEntity
                     .ok()
                     .contentType(
-                        MediaType.valueOf(contentType)
+                        MediaType.valueOf(contentType),
                     )
                     .body(file.readBytes())
         }
@@ -122,7 +133,7 @@ class ContentService(
             else -> ResponseEntity.ok().body(
                 linkTo<ContentController> {
                     getContentJsonById(file.name)
-                }.toString().toByteArray()
+                }.toString().toByteArray(),
             )
         }
     }

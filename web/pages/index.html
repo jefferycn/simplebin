@@ -45,6 +45,14 @@
   </button>
 </main>
 <div id="toast"></div>
+<div id="pasteSheetBackdrop" class="sheet-backdrop"></div>
+<div id="pasteSheet" class="sheet" role="dialog" aria-label="粘贴">
+  <textarea id="pasteSheetInput" rows="4" placeholder="点键盘上的“粘贴”，或长按选粘贴" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+  <div class="sheet-actions">
+    <button class="btn" id="pasteSheetCancel">取消</button>
+    <button class="btn primary" id="pasteSheetSave">保存</button>
+  </div>
+</div>
 <script src="/static/app.js"></script>
 <script src="/static/home.js"></script>
 <script type="module" src="/static/viewer.js"></script>

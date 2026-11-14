@@ -77,6 +77,20 @@ label { display: block; margin: 12px 0 4px; font-size: 14px; color: var(--muted)
   transition: transform .1s ease, opacity .1s ease; }
 .fab:active { transform: scale(.92); opacity: .85; }
 .fab svg { width: 27px; height: 27px; }
+/* 首页：粘贴面板（剪贴板权限未授权时用，不触发系统弹窗）。
+   顶栏下方悬浮，不贴底部——键盘弹起也不会盖住它。 */
+.sheet-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.35);
+  opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+.sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+.sheet { position: fixed; left: 12px; right: 12px; top: calc(76px + env(safe-area-inset-top)); z-index: 61;
+  max-width: 696px; margin: 0 auto;
+  background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,.6); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 16px;
+  opacity: 0; transform: translateY(-12px); pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+.sheet.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.sheet textarea { min-height: 100px; }
+.sheet-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 .dropzone { border: 2px dashed rgba(0,122,255,.4); border-radius: var(--radius); padding: 22px;
   text-align: center; color: var(--muted); margin-top: 12px; background: rgba(255,255,255,.45); }
 .dropzone.over { border-color: var(--accent); color: var(--accent); background: rgba(0,122,255,.08); }

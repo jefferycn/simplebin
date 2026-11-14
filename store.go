@@ -466,6 +466,32 @@ func (s *Store) IsItemPinned(itemID string) (bool, error) {
 	return n > 0, nil
 }
 
+// ListFilesMissingSnippet 返回没有预览摘要的文件条目（上线前传的文本文件）。
+func (s *Store) ListFilesMissingSnippet() ([]*Item, error) {
+	rows, err := s.db.Query(
+		`SELECT ` + itemColumns + ` FROM items i LEFT JOIN users u ON u.id = i.shared_from_user_id
+		 WHERE i.type = 'file' AND (i.snippet IS NULL OR i.snippet = '')`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*Item
+	for rows.Next() {
+		it, err := scanItem(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
+// UpdateItemSnippet 只更新条目的预览摘要。
+func (s *Store) UpdateItemSnippet(id, snippet string) error {
+	_, err := s.db.Exec(`UPDATE items SET snippet = ? WHERE id = ?`, snippet, id)
+	return err
+}
+
 // TotalSize 返回某用户全部条目的总字节数（历史页页脚展示）。
 func (s *Store) TotalSize(ownerID int64) (int64, error) {
 	var n sql.NullInt64

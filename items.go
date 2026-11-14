@@ -111,7 +111,7 @@ func (a *App) createFileItem(ownerID int64, filename string, src io.Reader) (*It
 		os.Remove(tmpPath)
 		return nil, err
 	}
-	head := make([]byte, 512)
+	head := make([]byte, 1024)
 	n, _ := io.ReadFull(f, head)
 	it.Mime = http.DetectContentType(head[:n])
 	if it.Mime == "application/octet-stream" {
@@ -129,6 +129,8 @@ func (a *App) createFileItem(ownerID int64, filename string, src io.Reader) (*It
 		}
 	} else {
 		it.Type = "file"
+		// 文本文件（md/txt 等）截一段开头做卡片预览；二进制文件没有预览
+		it.Snippet = textPreview(head[:n])
 	}
 	f.Close()
 	// 去重：同一用户传过字节完全一样的文件（同类型同哈希），不建新卡，
@@ -297,6 +299,32 @@ func (a *App) deduplicateExisting() int {
 		}
 	}
 	return merged
+}
+
+// backfillFileSnippets 给已有的文本文件补预览摘要（预览功能上线前传的
+// 文件没有 snippet）。返回补上的条数；失败只记日志，不阻止启动。
+func (a *App) backfillFileSnippets() int {
+	items, err := a.store.ListFilesMissingSnippet()
+	if err != nil {
+		log.Printf("预览摘要扫描失败: %v", err)
+		return 0
+	}
+	n := 0
+	for _, it := range items {
+		f, err := os.Open(a.store.blobFile(it.BlobPath))
+		if err != nil {
+			continue
+		}
+		head := make([]byte, 1024)
+		m, _ := io.ReadFull(f, head)
+		f.Close()
+		if prev := textPreview(head[:m]); prev != "" {
+			if err := a.store.UpdateItemSnippet(it.ID, prev); err == nil {
+				n++
+			}
+		}
+	}
+	return n
 }
 
 // shareItemToUser 把条目分享给另一个用户：复制语义，新记录归对方所有，

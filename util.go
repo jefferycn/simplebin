@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
@@ -76,6 +77,35 @@ func firstLine(s string) string {
 		s = s[:i]
 	}
 	return strings.TrimSpace(s)
+}
+
+// looksText 判断文件头是不是文本：不含 NUL 字节，且 UTF-8 有效
+// （允许末尾被截断的多字节字符）。
+func looksText(b []byte) bool {
+	if len(b) == 0 || bytes.IndexByte(b, 0) >= 0 {
+		return false
+	}
+	if utf8.Valid(b) {
+		return true
+	}
+	for i := 1; i <= 3 && i < len(b); i++ {
+		if utf8.Valid(b[:len(b)-i]) {
+			return true
+		}
+	}
+	return false
+}
+
+// textPreview 从文件头取文本预览（最多 200 字）：非文本返回 ""。
+// 用于 md/txt 等文本文件的卡片预览。
+func textPreview(b []byte) string {
+	if !looksText(b) {
+		return ""
+	}
+	for !utf8.Valid(b) { // 去掉末尾截断的多字节字符（最多 3 字节）
+		b = b[:len(b)-1]
+	}
+	return truncateRunes(strings.TrimSpace(string(b)), 200)
 }
 
 // isURL 判断整段文本是否就是一个 http(s) 链接；是则返回 host。

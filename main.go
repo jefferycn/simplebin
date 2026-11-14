@@ -35,6 +35,9 @@ func main() {
 	if n := app.deduplicateExisting(); n > 0 {
 		log.Printf("去重：合并了 %d 张重复卡片", n)
 	}
+	if n := app.backfillFileSnippets(); n > 0 {
+		log.Printf("预览摘要：补了 %d 个文本文件的摘要", n)
+	}
 	mux := app.routes()
 
 	srv := &http.Server{

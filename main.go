@@ -110,6 +110,9 @@ func (a *App) routes() *http.ServeMux {
 	mux.HandleFunc("POST /{$}", a.legacyCreate)
 	mux.HandleFunc("GET /plain", a.legacyPlain)
 	mux.HandleFunc("GET /json", a.legacyLatestJSON)
+	mux.HandleFunc("GET /{id}", a.legacyGetByID)
+	// GET /{id}/json 不直接注册：会与 GET /static/ 冲突导致启动 panic，
+	// 改在下面的 catch-all 里按路径形状分发。
 
 	// ---- 新 API ----
 	mux.HandleFunc("GET /api/v1/status", a.statusHandler)
@@ -144,8 +147,16 @@ func (a *App) routes() *http.ServeMux {
 	mux.HandleFunc("POST /api/v1/admin/users/{id}/disable", a.requireAdmin(a.adminSetDisabledHandler(true)))
 	mux.HandleFunc("POST /api/v1/admin/users/{id}/enable", a.requireAdmin(a.adminSetDisabledHandler(false)))
 
-	// 未匹配的路径：浏览器进首页重定向逻辑，API 返回 404 JSON
+	// 未匹配的路径：先看是不是旧 API 的 GET /{id}/json，再按浏览器/API 分流
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+			if len(parts) == 2 && parts[1] == "json" && parts[0] != "" {
+				r.SetPathValue("id", parts[0])
+				a.legacyGetJSONByID(w, r)
+				return
+			}
+		}
 		if strings.Contains(r.Header.Get("Accept"), "text/html") {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return

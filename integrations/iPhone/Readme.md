@@ -6,7 +6,10 @@ copy-latest, history, and file/image upload, without the Shortcuts bugs.
 
 The Shortcuts below still work against the v2 API, but the token changed: use
 a per-user API token generated on the Settings page of the web UI (shown only
-once), not the old single shared TOKEN. Also remember to change the hostname.
+once), not the old single shared TOKEN. Put the new token in the shortcut's
+Text field, replacing the old one. Also remember to change the hostname.
+`/{id}` and `/{id}/json` also work again, but now require the Bearer token
+and only return the token owner's own items.
 
 Here's the example of using Shortcuts to paste data to SimpleBin.
 

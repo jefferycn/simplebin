@@ -125,6 +125,57 @@ func (a *App) legacyCreate(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, legacyContent(it, r))
 }
 
+// legacyGetByID：GET /{id}，取指定条目原文（v1 行为）。
+// 链接 302 跳转，文本返回原文，图片/文件返回 blob。
+// 与 v1 的区别：必须带该用户的 Bearer token，且只能取自己的条目。
+func (a *App) legacyGetByID(w http.ResponseWriter, r *http.Request) {
+	u := a.legacyAuth(r)
+	if u == nil {
+		writeErr(w, http.StatusUnauthorized, "需要 Bearer token")
+		return
+	}
+	it, err := a.ownItem(r, u)
+	if err != nil {
+		writeErr(w, http.StatusNotFound, "条目不存在")
+		return
+	}
+	switch it.Type {
+	case "link":
+		body, err := a.itemBody(it)
+		if err != nil {
+			writeErr(w, http.StatusInternalServerError, "读取内容失败")
+			return
+		}
+		http.Redirect(w, r, body, http.StatusFound)
+	case "text":
+		body, err := a.itemBody(it)
+		if err != nil {
+			writeErr(w, http.StatusInternalServerError, "读取内容失败")
+			return
+		}
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Write([]byte(body))
+	default:
+		a.serveBlob(w, r, it)
+	}
+}
+
+// legacyGetJSONByID：GET /{id}/json，取指定条目的 JSON（v1 形状）。
+func (a *App) legacyGetJSONByID(w http.ResponseWriter, r *http.Request) {
+	u := a.legacyAuth(r)
+	if u == nil {
+		writeErr(w, http.StatusUnauthorized, "需要 Bearer token")
+		return
+	}
+	it, err := a.ownItem(r, u)
+	if err != nil {
+		writeErr(w, http.StatusNotFound, "条目不存在")
+		return
+	}
+	a.loadFullBody(it)
+	writeJSON(w, http.StatusOK, legacyContent(it, r))
+}
+
 // readAllLimit 读 body，超过上限返回错误。
 func readAllLimit(r *http.Request, limit int64) ([]byte, error) {
 	body, err := io.ReadAll(io.LimitReader(r.Body, limit+1))

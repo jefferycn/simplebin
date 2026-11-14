@@ -85,6 +85,7 @@ function rowHTML(it) {
     body = '<img class="row-thumb" loading="lazy" src="/api/v1/items/' + it.id + '/blob" alt="' + esc(it.title) + '">';
   } else {
     body = '<p class="row-snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
+    if (it.snippet) body += '<p class="row-snippet">' + esc(it.snippet) + '</p>';
   }
   const from = it.shared_from_username
     ? '<div class="row-from">来自 ' + esc(it.shared_from_username) + ' 的分享</div>' : '';

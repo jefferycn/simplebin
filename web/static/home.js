@@ -31,7 +31,7 @@ async function refreshRecent() {
   list.innerHTML = recentItems.map(cardHTML).join('');
   list.querySelectorAll('.latest-card').forEach(card => {
     const it = recentItems.find(i => i.id === card.dataset.id);
-    card.addEventListener('click', () => onCardClick(it));
+    card.addEventListener('click', e => onCardClick(e, it));
   });
 }
 
@@ -46,26 +46,26 @@ function cardHTML(it) {
     html += '<p class="snippet">' + esc(it.snippet || it.body || '') + '</p>';
   } else if (it.type === 'image') {
     html += '<img class="thumb" src="/api/v1/items/' + it.id + '/blob" alt="' + esc(it.title) + '">';
-    hint = '点按查看';
+    hint = '点图片查看 · 点卡片复制下载链接';
   } else {
     html += '<p class="snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
-    hint = '点按下载';
+    if (it.snippet) html += '<p class="snippet">' + esc(it.snippet) + '</p>';
+    hint = '点按复制下载链接';
   }
   html += '<div class="card-hint">' + hint + '</div>';
   return '<div class="latest-card clickable" data-id="' + it.id + '">' + html + '</div>';
 }
 
-// 点卡片：文本/链接复制全文，图片打开查看器，文件下载。
-async function onCardClick(it) {
+// 点卡片：文本/链接复制全文，图片/文件复制下载链接；
+// 图片点缩略图才打开查看器（下载改走历史页 ⋯ 菜单）。
+async function onCardClick(e, it) {
   try {
-    if (it.type === 'text' || it.type === 'link') {
-      await copyItem(it); // 超长文本 body 不在列表里时现取全文
-    } else if (it.type === 'image') {
+    if (it.type === 'image' && e.target.closest('img.thumb')) {
       if (window.SimpleBinViewer) window.SimpleBinViewer.openById(it.id);
-    } else {
-      location.href = '/api/v1/items/' + it.id + '/blob?download=1';
+      return;
     }
-  } catch (e) { toast(e.message); }
+    await copyItem(it); // 超长文本 body 不在列表里时现取全文
+  } catch (err) { toast(err.message); }
 }
 
 // 保存文本（防重复提交：一次只跑一个保存）
@@ -85,7 +85,7 @@ async function saveTextContent(text) {
 // 粘贴：直接读系统剪贴板，读到就保存。
 // iOS Safari 的坑：首次弹“允许粘贴”时，用户点了允许，当次 readText 照样失败，
 // 授权只对后续调用生效——所以失败时自动重试一次，用户不用再点一回。
-// 读不到时打开粘贴面板（不用再跑去新建页手动粘贴）。
+// 读不到时提示去新建页手动粘贴。
 async function doPaste() {
   let text = '';
   try {
@@ -95,7 +95,7 @@ async function doPaste() {
       await new Promise(r => setTimeout(r, 120));
       text = await navigator.clipboard.readText();
     } catch (e2) {
-      openPasteSheet();
+      toast('读不到剪贴板，请到新建页手动粘贴');
       return;
     }
   }
@@ -104,43 +104,7 @@ async function doPaste() {
 }
 
 // 粘贴按钮保持普通 button + click：touchstart 里 preventDefault 会吃掉手势，
-// readText 直接失败（2026-11-14 实测）。Paste/Speak 菜单 CSS 拦不住，
-// 先不管它，等真机再看。
-// 注意：不要先查权限、未授权就改走粘贴面板——2026-11-14 试过，面板要点
-// 3 次（打开面板+长按+粘贴），比直接 readText 弹确认窗点允许（2 次）还多
-// 一次，已改回直接 readText；面板只留作 readText 失败时的兜底。
+// readText 直接失败（2026-11-14 实测）。点 bin 图标弹出的 Paste/Speak 菜单
+// CSS 拦不住，用户已接受，不用再折腾；粘贴面板（大窗口）试过，要点 3 次
+// 还影响体验，用户明确要求取消，不要再提。
 document.getElementById('pasteSaveBtn').addEventListener('click', () => doPaste());
-
-// ---------- 粘贴面板 ----------
-// 用户主动粘贴（键盘上的“粘贴”按钮或长按菜单）触发的 paste 事件，
-// clipboardData 直接可用，不用权限、不弹系统窗。
-const pasteSheet = document.getElementById('pasteSheet');
-const pasteBackdrop = document.getElementById('pasteSheetBackdrop');
-const pasteInput = document.getElementById('pasteSheetInput');
-function openPasteSheet() {
-  pasteInput.value = '';
-  pasteSheet.classList.add('open');
-  pasteBackdrop.classList.add('open');
-  pasteInput.focus(); // 打开键盘，剪贴板有内容时键盘栏会显示“粘贴”按钮
-}
-function closePasteSheet() {
-  pasteSheet.classList.remove('open');
-  pasteBackdrop.classList.remove('open');
-  pasteInput.blur();
-}
-pasteBackdrop.addEventListener('click', closePasteSheet);
-document.getElementById('pasteSheetCancel').addEventListener('click', closePasteSheet);
-document.getElementById('pasteSheetSave').addEventListener('click', () => {
-  const text = pasteInput.value;
-  if (!text.trim()) { closePasteSheet(); return; }
-  closePasteSheet();
-  saveTextContent(text);
-});
-pasteInput.addEventListener('paste', e => {
-  const text = e.clipboardData ? e.clipboardData.getData('text') : '';
-  if (text && text.trim()) {
-    e.preventDefault(); // 直接保存，不用先贴进框里再点保存
-    closePasteSheet();
-    saveTextContent(text);
-  }
-});

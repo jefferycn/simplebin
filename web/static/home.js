@@ -25,7 +25,7 @@ async function refreshRecent() {
     }
   });
   if (!recentItems.length) {
-    list.innerHTML = '<p class="muted">还没有任何条目，在下方粘贴第一条吧。</p>';
+    list.innerHTML = '<p class="muted">还没有任何条目，点右下角的按钮粘贴第一条吧。</p>';
     return;
   }
   list.innerHTML = recentItems.map(cardHTML).join('');

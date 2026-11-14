@@ -66,6 +66,17 @@ label { display: block; margin: 12px 0 4px; font-size: 14px; color: var(--muted)
 .latest-card .thumb { max-width: 100%; max-height: 240px; border-radius: 14px; display: block; margin-top: 8px; }
 .latest-card .snippet { white-space: pre-wrap; word-break: break-all; margin: 8px 0 0; color: var(--fg); }
 .card-hint { font-size: 13px; color: var(--muted); margin-top: 10px; }
+/* 首页：右下角悬浮粘贴按钮（bin 图标，点按粘贴剪贴板） */
+.home { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+.fab { position: fixed; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom));
+  width: 56px; height: 56px; border: none; border-radius: 50%;
+  background: var(--accent); color: #fff; cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0,122,255,.4);
+  display: flex; align-items: center; justify-content: center;
+  touch-action: manipulation; z-index: 40;
+  transition: transform .1s ease, opacity .1s ease; }
+.fab:active { transform: scale(.92); opacity: .85; }
+.fab svg { width: 27px; height: 27px; }
 .dropzone { border: 2px dashed rgba(0,122,255,.4); border-radius: var(--radius); padding: 22px;
   text-align: center; color: var(--muted); margin-top: 12px; background: rgba(255,255,255,.45); }
 .dropzone.over { border-color: var(--accent); color: var(--accent); background: rgba(0,122,255,.08); }

@@ -31,9 +31,18 @@
     </div>
   </div>
 </header>
-<main>
+<main class="home">
   <div id="recentList"><p class="muted">加载中…</p></div>
-  <button class="btn primary big" id="pasteSaveBtn">粘贴</button>
+  <button class="fab" id="pasteSaveBtn" aria-label="粘贴">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3v4"/>
+      <path d="M9.8 5.2 12 7.4l2.2-2.2"/>
+      <path d="M4 10h16"/>
+      <path d="M6.2 10 7.8 21h8.4L17.8 10"/>
+      <path d="M10 13.5v4"/>
+      <path d="M14 13.5v4"/>
+    </svg>
+  </button>
 </main>
 <div id="toast"></div>
 <script src="/static/app.js"></script>

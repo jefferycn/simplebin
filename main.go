@@ -85,6 +85,9 @@ func (a *App) routes() *http.ServeMux {
 	mux.HandleFunc("GET /history", a.requirePage(func(w http.ResponseWriter, r *http.Request, u *User) {
 		servePage("history.html")(w, r)
 	}))
+	mux.HandleFunc("GET /new", a.requirePage(func(w http.ResponseWriter, r *http.Request, u *User) {
+		servePage("new.html")(w, r)
+	}))
 	mux.HandleFunc("GET /item/{id}", a.requirePage(func(w http.ResponseWriter, r *http.Request, u *User) {
 		servePage("item.html")(w, r)
 	}))

@@ -46,9 +46,11 @@ async function loadList() {
     listEl.innerHTML = currentItems.map(rowHTML).join('');
     listEl.querySelectorAll('.item-row').forEach(row => {
       const item = currentItems.find(i => i.id === row.dataset.id);
-      row.addEventListener('click', e => {
-        if (e.target.closest('button, a')) return; // 点按钮不跳转
-        location.href = '/item/' + item.id;
+      // 点卡片本身就是复制（文本/链接复制全文，图片/文件复制下载地址）；
+      // 点按钮不触发，详情页改走「详情」按钮。
+      row.addEventListener('click', async e => {
+        if (e.target.closest('button, a')) return;
+        try { await copyItem(item); } catch (err) { toast(err.message); }
       });
       bindRowActions(row, item);
     });
@@ -77,11 +79,11 @@ function rowHTML(it) {
     '<div class="row-actions">' + actions + '</div></div>';
 }
 
-// 按类型显示相关操作按钮
+// 按类型显示相关操作按钮（复制已并入卡片点击，不再单设按钮）
 function actionButtons(it) {
   const b = [];
+  b.push('<button class="mini-btn" data-act="detail">详情</button>');
   if (it.type === 'text' || it.type === 'link') {
-    b.push('<button class="mini-btn" data-act="copy">复制</button>');
     b.push('<button class="mini-btn" data-act="edit">编辑</button>');
     if (it.type === 'link') b.push('<button class="mini-btn" data-act="open">打开</button>');
   } else if (it.type === 'image') {
@@ -103,7 +105,7 @@ function bindRowActions(row, item) {
       const act = btn.dataset.act;
       try {
         switch (act) {
-          case 'copy': await copyItem(item); break;
+          case 'detail': location.href = '/item/' + item.id; break;
           case 'edit': location.href = '/item/' + item.id + '?edit=1'; break;
           case 'open': {
             const full = await api('/api/v1/items/' + item.id);

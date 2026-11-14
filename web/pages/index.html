@@ -18,6 +18,7 @@
 <header class="topbar">
   <a class="brand" href="/">SimpleBin</a>
   <nav>
+    <a href="/new">新建</a>
     <a href="/history">历史</a>
     <a href="/settings">设置</a>
     <a href="/admin" id="adminLink" hidden>管理</a>
@@ -26,16 +27,8 @@
 </header>
 <main>
   <div class="latest-card" id="latestCard"><p class="muted">加载中…</p></div>
-  <button class="btn primary big" id="copyLatestBtn">复制最新</button>
-  <div class="paste-box">
-    <p><button class="btn primary big" id="pasteSaveBtn">粘贴并保存</button></p>
-    <textarea id="pasteText" placeholder="粘贴或输入文本，粘贴后自动保存…" autofocus></textarea>
-    <p><button class="btn primary big" id="saveTextBtn">保存</button></p>
-    <div class="dropzone" id="dropzone">拖拽文件到这里上传，或 <label class="linkbtn" for="fileInput" style="cursor:pointer">选择文件</label>
-      <input type="file" id="fileInput" hidden>
-      <div class="muted" style="font-size:13px;margin-top:4px">粘贴文本后自动保存；页面内 Ctrl+V / ⌘V 可直接粘贴图片</div>
-    </div>
-  </div>
+  <button class="btn primary big" id="pasteSaveBtn">粘贴并保存</button>
+  <p class="home-link"><a href="/new">手动输入文本或上传文件 →</a></p>
 </main>
 <div id="toast"></div>
 <script src="/static/app.js"></script>

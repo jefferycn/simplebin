@@ -1,4 +1,4 @@
-// 首页：最新条目卡片（点按复制）+ 粘贴并保存。
+// 首页：最新条目卡片（点按复制）+ 粘贴按钮。
 // 手动输入文本与文件上传已移到 /new（new.js）。
 
 let latest = null;
@@ -64,7 +64,7 @@ async function saveTextContent(text) {
   finally { saving = false; }
 }
 
-// 粘贴并保存：直接读系统剪贴板，读到就保存。
+// 粘贴：直接读系统剪贴板，读到就保存。
 // iOS Safari 每次读剪贴板都会弹系统确认（点“允许”），这是苹果的限制，网页绕不开；
 // 桌面端授权一次后就是一次点击。读不到时提示去新建页手动粘贴。
 document.getElementById('pasteSaveBtn').addEventListener('click', async () => {

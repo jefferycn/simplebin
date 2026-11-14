@@ -364,19 +364,29 @@ func (a *App) serveBlob(w http.ResponseWriter, r *http.Request, it *Item) {
 
 // ---------- 分享链接 ----------
 
+// ensureShareToken 取条目的分享 token，没有就生成并保存一个。
+func (a *App) ensureShareToken(it *Item) (string, error) {
+	if it.ShareToken != "" {
+		return it.ShareToken, nil
+	}
+	token := randBase62(32)
+	if err := a.store.SetShareToken(it.ID, token); err != nil {
+		return "", err
+	}
+	it.ShareToken = token
+	return token, nil
+}
+
 func (a *App) createShareLinkHandler(w http.ResponseWriter, r *http.Request, u *User) {
 	it, err := a.ownItem(r, u)
 	if err != nil {
 		writeErr(w, http.StatusNotFound, "条目不存在")
 		return
 	}
-	token := it.ShareToken
-	if token == "" {
-		token = randBase62(32)
-		if err := a.store.SetShareToken(it.ID, token); err != nil {
-			writeErr(w, http.StatusInternalServerError, "生成分享链接失败")
-			return
-		}
+	token, err := a.ensureShareToken(it)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, "生成分享链接失败")
+		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"share_token": token})
 }

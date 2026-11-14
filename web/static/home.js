@@ -103,9 +103,7 @@ async function doPaste() {
   toast('剪贴板里没有文本');
 }
 
-const pasteBtn = document.getElementById('pasteSaveBtn');
-// 触屏：在 touchstart 里就触发粘贴并 preventDefault，iOS 便不会把这次
-// 点按认成长按、弹出 Paste/Speak 菜单（CSS 的 -webkit-touch-callout 拦不住
-// 这种由点按触发的菜单）；click 留给鼠标/桌面端。
-pasteBtn.addEventListener('touchstart', e => { e.preventDefault(); doPaste(); }, { passive: false });
-pasteBtn.addEventListener('click', () => doPaste());
+// 注意：粘贴必须从 click 里触发。之前试过在 touchstart 里 preventDefault
+// 再读剪贴板，结果 iOS 不认这次点按的手势，readText 直接失败、读不到内容。
+// Paste/Speak 菜单靠 CSS 的 -webkit-touch-callout 拦（app.css），不要再动这里。
+document.getElementById('pasteSaveBtn').addEventListener('click', () => doPaste());

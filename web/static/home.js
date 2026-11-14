@@ -82,21 +82,6 @@ async function saveTextContent(text) {
   finally { saving = false; }
 }
 
-// 剪贴板权限状态（页面加载时查一次，回到前台时再查）：
-// granted 才直接 readText（一键粘贴，不弹窗）；否则打开粘贴面板，
-// 让用户在输入框里粘贴——paste 事件不需要权限，不会弹系统确认窗。
-// 注意：readText 必须同步发生在 click 手势里，所以这里只读缓存的状态，
-// 不能在 click 里先 await 查权限再读。
-let clipPerm = 'unsupported';
-function refreshClipPerm() {
-  if (!navigator.permissions || !navigator.permissions.query) { clipPerm = 'unsupported'; return; }
-  navigator.permissions.query({ name: 'clipboard-read' }).then(
-    st => { clipPerm = st.state; st.onchange = () => { clipPerm = st.state; }; },
-    () => { clipPerm = 'unsupported'; });
-}
-refreshClipPerm();
-document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshClipPerm(); });
-
 // 粘贴：直接读系统剪贴板，读到就保存。
 // iOS Safari 的坑：首次弹“允许粘贴”时，用户点了允许，当次 readText 照样失败，
 // 授权只对后续调用生效——所以失败时自动重试一次，用户不用再点一回。
@@ -121,10 +106,10 @@ async function doPaste() {
 // 粘贴按钮保持普通 button + click：touchstart 里 preventDefault 会吃掉手势，
 // readText 直接失败（2026-11-14 实测）。Paste/Speak 菜单 CSS 拦不住，
 // 先不管它，等真机再看。
-document.getElementById('pasteSaveBtn').addEventListener('click', () => {
-  if (clipPerm === 'granted') { doPaste(); return; }
-  openPasteSheet();
-});
+// 注意：不要先查权限、未授权就改走粘贴面板——2026-11-14 试过，面板要点
+// 3 次（打开面板+长按+粘贴），比直接 readText 弹确认窗点允许（2 次）还多
+// 一次，已改回直接 readText；面板只留作 readText 失败时的兜底。
+document.getElementById('pasteSaveBtn').addEventListener('click', () => doPaste());
 
 // ---------- 粘贴面板 ----------
 // 用户主动粘贴（键盘上的“粘贴”按钮或长按菜单）触发的 paste 事件，

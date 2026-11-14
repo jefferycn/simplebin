@@ -55,16 +55,14 @@ const TYPE_ICON = { text: '📄', link: '🔗', image: '🖼️', file: '📎' }
 function typeLabel(t) { return TYPE_LABEL[t] || t; }
 function typeIcon(t) { return TYPE_ICON[t] || '📄'; }
 
-// copyText 写剪贴板：优先 Clipboard API，失败时用 iOS 兼容的 execCommand 方案。
-// 返回是否成功；toast 只报真实结果（之前失败也报“已复制”是 bug）。
-async function copyText(s) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    try {
-      await navigator.clipboard.writeText(s);
-      toast('已复制');
-      return true;
-    } catch (e) { /* 掉到兼容方案 */ }
-  }
+// copyText 写剪贴板：必须在点击事件里同步调用。
+// iOS Safari 只认手势同步调用栈内的复制：先 await 再复制，手势一丢，
+// Clipboard API 与 execCommand 两条路都会失败（之前“复制失败”就是这个原因：
+// writeText 先 await 失败，fallback 已经出了手势）。
+// 所以先同步试 execCommand（立即返回成败，iOS 上最可靠），不行再同步调
+// Clipboard API（仍在手势内），都失败才报失败。返回是否成功（Clipboard API
+// 分支是异步确认，成败由回调报 toast，这里先返回 true）。
+function copyText(s) {
   // iOS Safari：ta.select() 选不中，必须 focus + setSelectionRange；
   // textarea 须 readonly（否则 focus 会弹键盘）且留在可视区域内。
   const ta = document.createElement('textarea');
@@ -86,8 +84,15 @@ async function copyText(s) {
   let ok = false;
   try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
   ta.remove();
-  toast(ok ? '已复制' : '复制失败，请长按手动复制');
-  return ok;
+  if (ok) { toast('已复制'); return true; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(s).then(
+      () => toast('已复制'),
+      () => toast('复制失败，请长按手动复制'));
+    return true;
+  }
+  toast('复制失败，请长按手动复制');
+  return false;
 }
 
 // ---------- 弹窗 ----------
@@ -119,8 +124,19 @@ function confirmModal(title, body, okText, onOk) {
 }
 
 // ---------- 顶栏 ----------
-// 每页加载时调一次：管理员显示“管理”入口，登出按钮绑事件。
+// 每页加载时调一次：⋯ 菜单开关、管理员显示“管理”入口、登出按钮绑事件。
 async function initTopbar() {
+  const menuBtn = document.getElementById('topMenuBtn');
+  const menuPop = document.getElementById('topMenuPop');
+  if (menuBtn && menuPop) {
+    menuBtn.addEventListener('click', e => {
+      e.stopPropagation(); // 历史页的 document 监听会关所有菜单，先拦住
+      menuPop.hidden = !menuPop.hidden;
+    });
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.topbar-menu')) menuPop.hidden = true;
+    });
+  }
   const btn = document.getElementById('logoutBtn');
   if (btn) btn.onclick = async () => {
     await api('/api/v1/logout', { method: 'POST' }).catch(() => {});
@@ -256,17 +272,24 @@ async function fastPinModal(item, after) {
 }
 
 // 复制条目内容：文本/链接取全文，图片/文件复制下载地址。
-// 列表接口已带 body（短文本直接存库里），优先用现成的，避免先 fetch 丢掉
-// iOS 的用户手势；只有超长文本（body 存文件里）才需要现取。
+// body 在手里时同步复制（绝不在复制前 await，iOS 手势会丢）；
+// body 不在手里时（超长文本，预取还没回来）先取全文，再弹窗让用户点
+// “复制”按钮——新点按是新手势，直接复制必失败。
 async function copyItem(item) {
   if (item.type === 'text' || item.type === 'link') {
-    let body = item.body;
-    if (!body) {
+    if (!item.body) {
       const full = await api('/api/v1/items/' + item.id);
-      body = full.body;
+      item.body = full.body;
+      const m = openModal('<h3>复制内容</h3><pre class="detail-text" style="max-height:40vh;overflow:auto">' +
+        esc(item.body) + '</pre>' +
+        '<div class="btn-row"><button class="btn primary" id="mCopy">复制</button>' +
+        '<button class="btn" id="mCancel">关闭</button></div>');
+      m.querySelector('#mCancel').onclick = closeModal;
+      m.querySelector('#mCopy').onclick = () => { copyText(item.body); closeModal(); };
+      return;
     }
-    await copyText(body);
+    copyText(item.body);
   } else {
-    await copyText(location.origin + '/api/v1/items/' + item.id + '/blob?download=1');
+    copyText(location.origin + '/api/v1/items/' + item.id + '/blob?download=1');
   }
 }

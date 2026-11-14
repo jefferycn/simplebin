@@ -50,6 +50,13 @@ async function loadList() {
     return;
   }
   currentItems = data.items || [];
+  // 超长文本的 body 不在列表里：加载时就提前取回全文存内存里，
+  // 点卡片时直接同步复制，不用现取丢手势（只有超长文本才多一次请求）。
+  currentItems.forEach(it => {
+    if ((it.type === 'text' || it.type === 'link') && !it.body) {
+      api('/api/v1/items/' + it.id).then(full => { it.body = full.body; }).catch(() => {});
+    }
+  });
   if (!currentItems.length) {
     listEl.innerHTML = '<p class="muted">没有符合条件的条目。</p>';
   } else {

@@ -17,14 +17,19 @@
 <body>
 <header class="topbar">
   <a class="brand" href="/">SimpleBin</a>
-  <nav>
-    <a href="/">首页</a>
-    <a href="/new">新建</a>
-    <a href="/history">历史</a>
-    <a href="/settings">设置</a>
-    <a href="/admin" id="adminLink" hidden>管理</a>
-    <button class="linkbtn" id="logoutBtn">登出</button>
-  </nav>
+<div class="topbar-actions">
+    <a class="icon-btn" href="/new" aria-label="新建">＋</a>
+    <div class="topbar-menu">
+      <button class="icon-btn" id="topMenuBtn" aria-label="菜单">⋯</button>
+      <div class="menu-pop" id="topMenuPop" hidden>
+        <a class="menu-item" href="/">首页</a>
+        <a class="menu-item" href="/history">历史</a>
+        <a class="menu-item" href="/settings">设置</a>
+        <a class="menu-item" href="/admin" id="adminLink" hidden>管理</a>
+        <button class="menu-item danger" id="logoutBtn">登出</button>
+      </div>
+    </div>
+  </div>
 </header>
 <main>
   <div id="detail"><p class="muted">加载中…</p></div>

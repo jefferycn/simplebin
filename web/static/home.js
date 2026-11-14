@@ -17,6 +17,13 @@ async function refreshRecent() {
     return;
   }
   recentItems = data.items || [];
+  // 超长文本的 body 不在列表里：加载时就提前取回全文存内存里，
+  // 点卡片时直接同步复制，不用现取丢手势。
+  recentItems.forEach(it => {
+    if ((it.type === 'text' || it.type === 'link') && !it.body) {
+      api('/api/v1/items/' + it.id).then(full => { it.body = full.body; }).catch(() => {});
+    }
+  });
   if (!recentItems.length) {
     list.innerHTML = '<p class="muted">还没有任何条目，在下方粘贴第一条吧。</p>';
     return;

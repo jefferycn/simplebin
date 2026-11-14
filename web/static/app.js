@@ -55,21 +55,39 @@ const TYPE_ICON = { text: '📄', link: '🔗', image: '🖼️', file: '📎' }
 function typeLabel(t) { return TYPE_LABEL[t] || t; }
 function typeIcon(t) { return TYPE_ICON[t] || '📄'; }
 
-// copyText 写剪贴板：优先 Clipboard API，失败时退回 textarea 方案。
+// copyText 写剪贴板：优先 Clipboard API，失败时用 iOS 兼容的 execCommand 方案。
+// 返回是否成功；toast 只报真实结果（之前失败也报“已复制”是 bug）。
 async function copyText(s) {
-  try {
-    await navigator.clipboard.writeText(s);
-  } catch {
-    const ta = document.createElement('textarea');
-    ta.value = s;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(s);
+      toast('已复制');
+      return true;
+    } catch (e) { /* 掉到兼容方案 */ }
   }
-  toast('已复制');
+  // iOS Safari：ta.select() 选不中，必须 focus + setSelectionRange；
+  // textarea 须 readonly（否则 focus 会弹键盘）且留在可视区域内。
+  const ta = document.createElement('textarea');
+  ta.value = s;
+  ta.readOnly = true;
+  ta.style.position = 'fixed';
+  ta.style.top = '0';
+  ta.style.left = '0';
+  ta.style.width = '2em';
+  ta.style.height = '2em';
+  ta.style.padding = '0';
+  ta.style.border = 'none';
+  ta.style.outline = 'none';
+  ta.style.background = 'transparent';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.setSelectionRange(0, ta.value.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  ta.remove();
+  toast(ok ? '已复制' : '复制失败，请长按手动复制');
+  return ok;
 }
 
 // ---------- 弹窗 ----------
@@ -217,10 +235,16 @@ async function fastPinModal(item, after) {
 }
 
 // 复制条目内容：文本/链接取全文，图片/文件复制下载地址。
+// 列表接口已带 body（短文本直接存库里），优先用现成的，避免先 fetch 丢掉
+// iOS 的用户手势；只有超长文本（body 存文件里）才需要现取。
 async function copyItem(item) {
   if (item.type === 'text' || item.type === 'link') {
-    const full = await api('/api/v1/items/' + item.id);
-    await copyText(full.body);
+    let body = item.body;
+    if (!body) {
+      const full = await api('/api/v1/items/' + item.id);
+      body = full.body;
+    }
+    await copyText(body);
   } else {
     await copyText(location.origin + '/api/v1/items/' + item.id + '/blob?download=1');
   }

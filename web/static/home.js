@@ -1,54 +1,65 @@
-// 首页：最新条目卡片（点按复制）+ 粘贴按钮。
+// 首页：最新三条卡片（点按复制/查看/下载）+ 粘贴按钮。
 // 手动输入文本与文件上传已移到 /new（new.js）。
 
-let latest = null;
+let recentItems = [];
 
 initTopbar();
-refreshLatest();
+refreshRecent();
 
-async function refreshLatest() {
-  const card = document.getElementById('latestCard');
+async function refreshRecent() {
+  const list = document.getElementById('recentList');
+  let data;
   try {
-    latest = await api('/api/v1/items/latest');
+    data = await api('/api/v1/items?page=1&per_page=3&sort=newest');
   } catch (e) {
-    latest = null;
-    card.classList.remove('clickable');
-    card.innerHTML = '<p class="muted">还没有任何条目，在下方粘贴第一条吧。</p>';
+    recentItems = [];
+    list.innerHTML = '<p class="muted">加载失败：' + esc(e.message) + '</p>';
     return;
   }
-  let html = '<div class="muted">' + typeIcon(latest.type) + ' ' + typeLabel(latest.type) +
-    ' · ' + fmtTime(latest.created_at) + '</div>';
-  if (latest.shared_from_username) {
-    html += '<div class="row-from">来自 ' + esc(latest.shared_from_username) + ' 的分享</div>';
+  recentItems = data.items || [];
+  if (!recentItems.length) {
+    list.innerHTML = '<p class="muted">还没有任何条目，在下方粘贴第一条吧。</p>';
+    return;
+  }
+  list.innerHTML = recentItems.map(cardHTML).join('');
+  list.querySelectorAll('.latest-card').forEach(card => {
+    const it = recentItems.find(i => i.id === card.dataset.id);
+    card.addEventListener('click', () => onCardClick(it));
+  });
+}
+
+function cardHTML(it) {
+  let html = '<div class="muted">' + typeIcon(it.type) + ' ' + typeLabel(it.type) +
+    ' · ' + fmtTime(it.created_at) + '</div>';
+  if (it.shared_from_username) {
+    html += '<div class="row-from">来自 ' + esc(it.shared_from_username) + ' 的分享</div>';
   }
   let hint = '点按复制';
-  if (latest.type === 'text' || latest.type === 'link') {
-    html += '<p class="snippet">' + esc(latest.snippet || latest.body || '') + '</p>';
-  } else if (latest.type === 'image') {
-    html += '<img class="thumb" src="/api/v1/items/' + latest.id + '/blob" alt="' + esc(latest.title) + '">';
+  if (it.type === 'text' || it.type === 'link') {
+    html += '<p class="snippet">' + esc(it.snippet || it.body || '') + '</p>';
+  } else if (it.type === 'image') {
+    html += '<img class="thumb" src="/api/v1/items/' + it.id + '/blob" alt="' + esc(it.title) + '">';
     hint = '点按查看';
   } else {
-    html += '<p class="snippet">📎 ' + esc(latest.filename) + ' · ' + fmtSize(latest.size) + '</p>';
+    html += '<p class="snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
     hint = '点按下载';
   }
   html += '<div class="card-hint">' + hint + '</div>';
-  card.innerHTML = html;
-  card.classList.add('clickable');
+  return '<div class="latest-card clickable" data-id="' + it.id + '">' + html + '</div>';
 }
 
 // 点卡片：文本/链接复制全文，图片打开查看器，文件下载。
-document.getElementById('latestCard').addEventListener('click', async () => {
-  if (!latest) return;
+async function onCardClick(it) {
   try {
-    if (latest.type === 'text' || latest.type === 'link') {
-      await copyItem(latest); // 超长文本 body 不在列表里时现取全文
-    } else if (latest.type === 'image') {
-      if (window.SimpleBinViewer) window.SimpleBinViewer.openById(latest.id);
+    if (it.type === 'text' || it.type === 'link') {
+      await copyItem(it); // 超长文本 body 不在列表里时现取全文
+    } else if (it.type === 'image') {
+      if (window.SimpleBinViewer) window.SimpleBinViewer.openById(it.id);
     } else {
-      location.href = '/api/v1/items/' + latest.id + '/blob?download=1';
+      location.href = '/api/v1/items/' + it.id + '/blob?download=1';
     }
   } catch (e) { toast(e.message); }
-});
+}
 
 // 保存文本（防重复提交：一次只跑一个保存）
 let saving = false;
@@ -59,7 +70,7 @@ async function saveTextContent(text) {
   try {
     await api('/api/v1/items', { method: 'POST', body: JSON.stringify({ text }) });
     toast('已保存');
-    refreshLatest();
+    refreshRecent();
   } catch (e) { toast(e.message); }
   finally { saving = false; }
 }

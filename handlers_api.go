@@ -403,7 +403,8 @@ func (a *App) shareToUserHandler(w http.ResponseWriter, r *http.Request, u *User
 		return
 	}
 	var req struct {
-		Username string `json:"username"`
+		Username    string `json:"username"`
+		FastMinutes int    `json:"fast_minutes"` // 可选：1/5/10，设置后副本同时置顶到对方 Fast
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeErr(w, http.StatusBadRequest, "请求格式错误")
@@ -418,9 +419,24 @@ func (a *App) shareToUserHandler(w http.ResponseWriter, r *http.Request, u *User
 		writeErr(w, http.StatusBadRequest, "不能分享给自己")
 		return
 	}
+	if req.FastMinutes != 0 && req.FastMinutes != 1 && req.FastMinutes != 5 && req.FastMinutes != 10 {
+		writeErr(w, http.StatusBadRequest, "置顶时长只能是 1、5 或 10 分钟")
+		return
+	}
 	cp, err := a.shareItemToUser(it, u, target)
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, "分享失败")
+		return
+	}
+	if req.FastMinutes != 0 {
+		expires := time.Now().UTC().Add(time.Duration(req.FastMinutes) * time.Minute)
+		if err := a.store.SetPin(target.ID, cp.ID, expires); err != nil {
+			writeErr(w, http.StatusInternalServerError, "置顶失败")
+			return
+		}
+		writeJSON(w, http.StatusCreated, map[string]any{
+			"item": cp, "fast_expires_at": expires.Format(time.RFC3339Nano),
+		})
 		return
 	}
 	writeJSON(w, http.StatusCreated, cp)

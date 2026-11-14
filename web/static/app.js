@@ -194,17 +194,38 @@ async function shareToUserModal(item, after) {
   const opts = users.map(u => '<option value="' + esc(u.username) + '">' + esc(u.username) + '</option>').join('');
   const m = openModal('<h3>分享给用户</h3><p class="muted">生成一份副本归对方所有，成为对方的最新条目。对方可编辑、删除，不影响你的原件。</p>' +
     '<div class="field"><label>分享给</label><select id="mUser">' + opts + '</select></div>' +
+    '<div class="field"><label><input type="checkbox" id="mPin"> 同时置顶到对方 Fast</label>' +
+    '<p class="muted">勾选后副本会显示在对方的公开快取页（无需登录），到期自动消失；会替换对方当前置顶。</p></div>' +
+    '<div class="field" id="mPinDur" hidden><label>置顶时长</label>' +
+    '<select id="mMin"><option value="1">1 分钟</option><option value="5">5 分钟</option>' +
+    '<option value="10" selected>10 分钟</option></select></div>' +
     '<div class="btn-row"><button class="btn primary" id="mOk">分享</button>' +
     '<button class="btn" id="mCancel">取消</button></div>');
   m.querySelector('#mCancel').onclick = closeModal;
+  m.querySelector('#mPin').onchange = e => {
+    m.querySelector('#mPinDur').hidden = !e.target.checked;
+  };
   m.querySelector('#mOk').onclick = async () => {
     const username = m.querySelector('#mUser').value;
+    const pin = m.querySelector('#mPin').checked;
+    const body = { username };
+    if (pin) body.fast_minutes = Number(m.querySelector('#mMin').value);
     try {
       await api('/api/v1/items/' + item.id + '/share', {
-        method: 'POST', body: JSON.stringify({ username }),
+        method: 'POST', body: JSON.stringify(body),
       });
-      toast('已分享给 ' + username);
       closeModal();
+      if (pin) {
+        const url = location.origin + '/fast/' + username;
+        const m2 = openModal('<h3>已分享并置顶</h3><p class="muted">对方的快取页（无需登录，' +
+          body.fast_minutes + ' 分钟后消失）：</p><p class="token-once">' + esc(url) + '</p>' +
+          '<div class="btn-row"><button class="btn primary" id="mCopy">复制链接</button>' +
+          '<button class="btn" id="mCancel">关闭</button></div>');
+        m2.querySelector('#mCancel').onclick = closeModal;
+        m2.querySelector('#mCopy').onclick = () => copyText(url);
+      } else {
+        toast('已分享给 ' + username);
+      }
       if (after) after();
     } catch (e) { toast(e.message); }
   };

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>设置 - SimpleBin</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">SimpleBin</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/history">历史</a>
+    <a href="/admin" id="adminLink" hidden>管理</a>
+    <button class="linkbtn" id="logoutBtn">登出</button>
+  </nav>
+</header>
+<main>
+  <h1>设置</h1>
+  <p class="muted" id="whoami"></p>
+
+  <h2>快取置顶</h2>
+  <p id="fastStatus" class="muted">加载中…</p>
+
+  <h2>API Token</h2>
+  <p class="muted">给脚本、Shortcuts、curl 用，走 <code>Authorization: Bearer</code>。原文只显示一次，请保存好。</p>
+  <div id="tokenList"><p class="muted">加载中…</p></div>
+  <form id="tokenForm" style="margin-top:12px">
+    <div class="field"><label>新 token 名称（可选，如“Mac 脚本”）</label><input type="text" id="tokenName" placeholder="未命名"></div>
+    <button class="btn primary" type="submit">生成 Token</button>
+  </form>
+
+  <h2>修改密码</h2>
+  <form id="passwordForm">
+    <div class="field"><label>当前密码</label><input type="password" id="curPw" autocomplete="current-password"></div>
+    <div class="field"><label>新密码（最短 8 位）</label><input type="password" id="newPw" autocomplete="new-password"></div>
+    <p class="err" id="pwErr"></p>
+    <button class="btn primary" type="submit">修改密码</button>
+  </form>
+</main>
+<div id="toast"></div>
+<script src="/static/app.js"></script>
+<script src="/static/settings.js"></script>
+</body>
+</html>

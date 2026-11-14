@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SimpleBin</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/vendor/photoswipe.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">SimpleBin</a>
+  <nav>
+    <a href="/history">历史</a>
+    <a href="/settings">设置</a>
+    <a href="/admin" id="adminLink" hidden>管理</a>
+    <button class="linkbtn" id="logoutBtn">登出</button>
+  </nav>
+</header>
+<main>
+  <div class="latest-card" id="latestCard"><p class="muted">加载中…</p></div>
+  <button class="btn primary big" id="copyLatestBtn">复制最新</button>
+  <div class="paste-box">
+    <textarea id="pasteText" placeholder="粘贴或输入文本…" autofocus></textarea>
+    <p><button class="btn primary big" id="saveTextBtn">保存</button></p>
+    <div class="dropzone" id="dropzone">拖拽文件到这里上传，或 <label class="linkbtn" for="fileInput" style="cursor:pointer">选择文件</label>
+      <input type="file" id="fileInput" hidden>
+      <div class="muted" style="font-size:13px;margin-top:4px">页面内 Ctrl+V / ⌘V 可直接粘贴图片</div>
+    </div>
+  </div>
+</main>
+<div id="toast"></div>
+<script src="/static/app.js"></script>
+<script src="/static/home.js"></script>
+<script type="module" src="/static/viewer.js"></script>
+</body>
+</html>

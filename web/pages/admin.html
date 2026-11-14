@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>用户管理 - SimpleBin</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">SimpleBin</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/history">历史</a>
+    <a href="/settings">设置</a>
+    <button class="linkbtn" id="logoutBtn">登出</button>
+  </nav>
+</header>
+<main>
+  <h1>用户管理</h1>
+  <div id="userList"><p class="muted">加载中…</p></div>
+
+  <h2>创建用户</h2>
+  <form id="createUserForm">
+    <div class="field"><label>用户名（小写字母、数字、-、_）</label><input type="text" id="newUsername"></div>
+    <div class="field"><label>初始密码（最短 8 位）</label><input type="password" id="newPassword" autocomplete="new-password"></div>
+    <div class="field"><label><input type="checkbox" id="newIsAdmin" style="width:auto"> 设为管理员</label></div>
+    <p class="err" id="err"></p>
+    <button class="btn primary" type="submit">创建用户</button>
+  </form>
+</main>
+<div id="toast"></div>
+<script src="/static/app.js"></script>
+<script src="/static/admin.js"></script>
+</body>
+</html>

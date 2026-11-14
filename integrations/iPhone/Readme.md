@@ -1,8 +1,14 @@
-## Using SimpleBin in an iOS device
+## Using SimpleBin on an iOS device
+
+**v2 note — these Shortcuts are legacy.** The official client in v2 is the web
+page: open SimpleBin in Safari and use "Add to Home Screen". It covers paste,
+copy-latest, history, and file/image upload, without the Shortcuts bugs.
+
+The Shortcuts below still work against the v2 API, but the token changed: use
+a per-user API token generated on the Settings page of the web UI (shown only
+once), not the old single shared TOKEN. Also remember to change the hostname.
 
 Here's the example of using Shortcuts to paste data to SimpleBin.
-If you SimpleBin application has `TOKEN` setup, you should set it in Text field.
-Also remember to change the hostname.
 
 https://www.icloud.com/shortcuts/722b56a9025f45378ee896912579b847
 

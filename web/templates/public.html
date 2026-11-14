@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>{{.Title}} - SimpleBin</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<main class="public">
+  {{if .IsFast}}<div class="fast-badge">快取 <span id="countdown" data-expires="{{.ExpiresAt}}"></span></div>{{end}}
+  <h1 class="public-title">{{.Title}}</h1>
+  {{if eq .Type "text"}}
+  <pre id="content" class="public-text">{{.Body}}</pre>
+  <button id="copyBtn" class="btn primary big">复制</button>
+  {{else if eq .Type "link"}}
+  <p class="public-link"><a id="content" href="{{.URL}}">{{.URL}}</a></p>
+  <p><button id="copyBtn" class="btn primary big">复制链接</button> <a class="btn" href="{{.URL}}">打开链接</a></p>
+  {{else if eq .Type "image"}}
+  <p><img class="public-img" src="{{.ImgSrc}}" alt="{{.Title}}"></p>
+  <p><a class="btn" href="{{.Download}}">下载原图</a></p>
+  {{else}}
+  <p class="file-info">📎 {{.FileName}} · <span data-size="{{.FileSize}}"></span></p>
+  <p><a class="btn primary big" href="{{.Download}}">下载文件</a></p>
+  {{end}}
+</main>
+<script src="/static/fast.js"></script>
+</body>
+</html>

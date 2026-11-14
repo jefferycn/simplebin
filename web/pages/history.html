@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>历史 - SimpleBin</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/vendor/photoswipe.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">SimpleBin</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/settings">设置</a>
+    <a href="/admin" id="adminLink" hidden>管理</a>
+    <button class="linkbtn" id="logoutBtn">登出</button>
+  </nav>
+</header>
+<main>
+  <h1>历史记录</h1>
+  <div class="filters">
+    <input type="search" id="q" placeholder="搜索标题 / 内容…">
+    <select id="typeFilter">
+      <option value="all">全部类型</option>
+      <option value="text">文本</option>
+      <option value="link">链接</option>
+      <option value="image">图片</option>
+      <option value="file">文件</option>
+    </select>
+    <select id="sortSelect">
+      <option value="newest">最新优先</option>
+      <option value="oldest">最旧优先</option>
+      <option value="size">按大小</option>
+      <option value="type">按类型</option>
+    </select>
+  </div>
+  <div id="list"><p class="muted">加载中…</p></div>
+  <div class="pager" id="pager"></div>
+  <p class="stats" id="stats"></p>
+</main>
+<div id="toast"></div>
+<script src="/static/app.js"></script>
+<script src="/static/history.js"></script>
+<script type="module" src="/static/viewer.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+# SimpleBin v2 部署示例（群晖 / 任意 Docker 主机）。
+# 首次启动后打开 http://<主机>:8080 注册首个管理员，之后由管理员创建其他用户。
+services:
+  simplebin:
+    build: .
+    image: simplebin:2.0
+    container_name: simplebin
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # 全部数据都在这里：simplebin.db + blobs/，备份拷走整个目录即可
+      - ./data:/data
+    environment:
+      - DATA_DIR=/data
+      - PORT=8080
+      # 反代 HTTPS 时保持 true；仅本地 HTTP 直连调试时改为 false
+      - SECURE_COOKIES=true
+    # Go 常驻内存约 10–25MB，64MB 上限是护栏
+    mem_limit: 64m

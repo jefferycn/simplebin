@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>注册管理员 - SimpleBin</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<main>
+  <h1>注册首个管理员</h1>
+  <p class="muted">这是首次使用，注册的用户自动成为管理员。之后不再开放注册，由管理员创建其他用户。</p>
+  <form id="registerForm">
+    <div class="field"><label>用户名（小写字母、数字、-、_）</label><input type="text" id="username" autocomplete="username" autofocus></div>
+    <div class="field"><label>密码（最短 8 位）</label><input type="password" id="password" autocomplete="new-password"></div>
+    <div class="field"><label>确认密码</label><input type="password" id="password2" autocomplete="new-password"></div>
+    <p class="err" id="err"></p>
+    <button class="btn primary big" type="submit">注册并登录</button>
+  </form>
+  <p class="muted"><a href="/login">已有账号？去登录</a></p>
+</main>
+<div id="toast"></div>
+<script src="/static/app.js"></script>
+<script src="/static/auth.js"></script>
+</body>
+</html>

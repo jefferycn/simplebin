@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>登录 - SimpleBin</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<main>
+  <h1>SimpleBin</h1>
+  <form id="loginForm">
+    <div class="field"><label>用户名</label><input type="text" id="username" autocomplete="username" autofocus></div>
+    <div class="field"><label>密码</label><input type="password" id="password" autocomplete="current-password"></div>
+    <p class="err" id="err"></p>
+    <button class="btn primary big" type="submit">登录</button>
+  </form>
+  <p class="muted" id="setupHint" hidden>还没有任何用户？<a href="/register">注册首个管理员</a></p>
+</main>
+<div id="toast"></div>
+<script src="/static/app.js"></script>
+<script src="/static/auth.js"></script>
+</body>
+</html>

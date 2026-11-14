@@ -83,14 +83,22 @@ async function saveTextContent(text) {
 }
 
 // 粘贴：直接读系统剪贴板，读到就保存。
-// iOS Safari 每次读剪贴板都会弹系统确认（点“允许”），这是苹果的限制，网页绕不开；
-// 桌面端授权一次后就是一次点击。读不到时提示去新建页手动粘贴。
+// iOS Safari 的坑：首次弹“允许粘贴”时，用户点了允许，当次 readText 照样失败，
+// 授权只对后续调用生效——所以失败时自动重试一次，用户不用再点一回。
+// 授权过后不再弹确认，就是一次点击。读不到时提示去新建页手动粘贴。
 document.getElementById('pasteSaveBtn').addEventListener('click', async () => {
+  let text = '';
   try {
-    const text = await navigator.clipboard.readText();
-    if (text && text.trim()) { saveTextContent(text); return; }
-    toast('剪贴板里没有文本');
+    text = await navigator.clipboard.readText();
   } catch (e) {
-    toast('读不到剪贴板，请到新建页手动粘贴');
+    try {
+      await new Promise(r => setTimeout(r, 120));
+      text = await navigator.clipboard.readText();
+    } catch (e2) {
+      toast('读不到剪贴板，请到新建页手动粘贴');
+      return;
+    }
   }
+  if (text && text.trim()) { saveTextContent(text); return; }
+  toast('剪贴板里没有文本');
 });

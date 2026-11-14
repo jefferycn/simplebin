@@ -44,19 +44,52 @@ document.getElementById('copyLatestBtn').addEventListener('click', async () => {
   } catch (e) { toast(e.message); }
 });
 
-// 保存文本
-document.getElementById('saveTextBtn').addEventListener('click', saveText);
-async function saveText() {
-  const ta = document.getElementById('pasteText');
-  const text = ta.value;
+// 保存文本（防重复提交：一次只跑一个保存）
+let saving = false;
+async function saveTextContent(text) {
   if (!text.trim()) { toast('内容不能为空'); return; }
+  if (saving) return;
+  saving = true;
   try {
     await api('/api/v1/items', { method: 'POST', body: JSON.stringify({ text }) });
-    ta.value = '';
+    const ta = document.getElementById('pasteText');
+    if (ta.value === text) ta.value = '';
     toast('已保存');
     refreshLatest();
   } catch (e) { toast(e.message); }
+  finally { saving = false; }
 }
+
+// 保存按钮：保存输入框里的文本（手动输入/编辑时用）
+document.getElementById('saveTextBtn').addEventListener('click', () => {
+  saveTextContent(document.getElementById('pasteText').value);
+});
+
+// 粘贴并保存：直接读系统剪贴板，读到就保存。
+// iOS Safari 每次读剪贴板都会弹系统确认（点“允许”），这是苹果的限制，网页绕不开；
+// 桌面端授权一次后就是一次点击。读不到时退回手动粘贴（粘贴后自动保存）。
+document.getElementById('pasteSaveBtn').addEventListener('click', async () => {
+  const ta = document.getElementById('pasteText');
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text && text.trim()) { saveTextContent(text); return; }
+    toast('剪贴板里没有文本');
+    ta.focus();
+  } catch (e) {
+    ta.focus();
+    toast('请在输入框里粘贴，粘贴后自动保存');
+  }
+});
+
+// 输入框里手动粘贴文本：粘贴后自动保存，不用再点保存。
+// 只在输入框原本为空时自动保存；框里已有内容时是编辑，不自动存。
+document.getElementById('pasteText').addEventListener('paste', e => {
+  const ta = e.target;
+  const files = e.clipboardData && e.clipboardData.files;
+  if (files && files.length) return; // 图片走全局粘贴上传
+  if (ta.value !== '') return;
+  setTimeout(() => { if (ta.value.trim()) saveTextContent(ta.value); }, 100);
+});
 
 // 上传文件（拖拽、选择、粘贴图片共用）
 async function uploadFile(file) {

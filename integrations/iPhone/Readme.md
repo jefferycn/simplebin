@@ -7,7 +7,10 @@ copy-latest, history, and file/image upload, without the Shortcuts bugs.
 The Shortcuts below still work against the v2 API, but the token changed: use
 a per-user API token generated on the Settings page of the web UI (shown only
 once), not the old single shared TOKEN. Put the new token in the shortcut's
-Text field, replacing the old one. Also remember to change the hostname.
+Text field, replacing the old one — copy the full token (`sb_` + 32 chars);
+the list on the Settings page only shows a prefix, which won't work.
+The Authorization header may carry the token with or without the `Bearer `
+prefix, as in v1. Also remember to change the hostname.
 `/{id}` and `/{id}/json` also work again, but now require the Bearer token
 and only return the token owner's own items.
 

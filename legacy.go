@@ -11,13 +11,21 @@ import (
 // 与 v1 的区别：从此必须带该用户的 Bearer token（v1 的读接口实际无鉴权，
 // 这是已知漏洞，不再保留）；公开看最新一条的用法改由 /fast 承担。
 
-// legacyAuth 只接受 Bearer token（旧客户端没有会话 Cookie）。
+// legacyAuth 校验旧客户端的 token（旧客户端没有会话 Cookie）。
+// v1 的校验接受 "Bearer <token>" 与裸 token 两种形式，这里保持一致：
+// 有些快捷指令的 Authorization 头不带 Bearer 前缀，只认 Bearer 会 401。
 func (a *App) legacyAuth(r *http.Request) *User {
-	h := r.Header.Get("Authorization")
-	if !strings.HasPrefix(h, "Bearer ") {
+	h := strings.TrimSpace(r.Header.Get("Authorization"))
+	if h == "" {
 		return nil
 	}
-	u, err := a.store.GetTokenUser(strings.TrimPrefix(h, "Bearer "))
+	if len(h) > 7 && strings.EqualFold(h[:7], "Bearer ") {
+		h = strings.TrimSpace(h[7:])
+	}
+	if h == "" {
+		return nil
+	}
+	u, err := a.store.GetTokenUser(h)
 	if err != nil {
 		return nil
 	}

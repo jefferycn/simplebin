@@ -1,5 +1,5 @@
 # SimpleBin v2 部署示例（群晖 / 任意 Docker 主机）。
-# 首次启动后打开 http://<主机>:8080 注册首个管理员，之后由管理员创建其他用户。
+# 首次启动后打开 http://<主机>:11025 注册首个管理员，之后由管理员创建其他用户。
 services:
   simplebin:
     build: .
@@ -7,7 +7,7 @@ services:
     container_name: simplebin
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "11025:8080"
     volumes:
       # 全部数据都在这里：simplebin.db + blobs/，备份拷走整个目录即可
       - ./data:/data

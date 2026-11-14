@@ -87,12 +87,12 @@ function rowHTML(it) {
     body = '<p class="row-snippet">' + esc(it.snippet || '') + '</p>';
   } else if (it.type === 'image') {
     body = '<img class="row-thumb" loading="lazy" src="/api/v1/items/' + it.id + '/blob" alt="' + esc(it.title) + '">' +
-      '<p class="row-snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
+      '<p class="row-snippet">' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
   } else {
     // 预览在上、文件名和大小在下，和图片卡一致
     body = '';
     if (it.snippet) body += '<p class="row-snippet">' + esc(it.snippet) + '</p>';
-    body += '<p class="row-snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
+    body += '<p class="row-snippet">' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
   }
   const from = it.shared_from_username
     ? '<div class="row-from">来自 ' + esc(it.shared_from_username) + ' 的分享</div>' : '';

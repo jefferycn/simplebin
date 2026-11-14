@@ -47,11 +47,11 @@ function cardHTML(it) {
     html += '<p class="snippet">' + esc(it.snippet || it.body || '') + '</p>';
   } else if (it.type === 'image') {
     html += '<img class="thumb" src="/api/v1/items/' + it.id + '/blob" alt="' + esc(it.title) + '">';
-    html += '<p class="snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
+    html += '<p class="snippet">' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
   } else {
     // 预览在上、文件名和大小在下，和图片卡（缩略图在上、文件名在下）一致
     if (it.snippet) html += '<p class="snippet">' + esc(it.snippet) + '</p>';
-    html += '<p class="snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
+    html += '<p class="snippet">' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
   }
   return '<div class="latest-card clickable" data-id="' + it.id + '">' + html + '</div>';
 }

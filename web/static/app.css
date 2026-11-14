@@ -93,7 +93,10 @@ label { display: block; margin: 12px 0 4px; font-size: 14px; color: var(--muted)
 .item-row:active { transform: scale(.98); opacity: .85; }
 .item-row.menu-open { z-index: 10; }
 .item-row .row-head { display: flex; gap: 8px; align-items: center; }
-.item-row .row-title { font-weight: 600; word-break: break-all; flex: 1; min-width: 0; }
+.item-row .row-kind { font-size: 13px; color: var(--muted); flex: 1; min-width: 0; }
+/* 点按元素不触发 iOS 长按选词菜单（Paste/Speak 浮层） */
+.fab, .icon-btn, .menu-btn, .btn, .latest-card, .item-row {
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .item-row .row-meta { font-size: 13px; color: var(--muted); white-space: nowrap; }
 /* 卡片右上角 ⋯ 菜单 */
 .row-menu { position: relative; flex: none; }

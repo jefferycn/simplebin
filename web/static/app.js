@@ -83,6 +83,7 @@ function copyText(s) {
   ta.setSelectionRange(0, ta.value.length);
   let ok = false;
   try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  ta.blur(); // 先失焦再移除，避免 iOS 给这个隐藏输入框弹出编辑菜单
   ta.remove();
   if (ok) { toast('已复制'); return true; }
   if (navigator.clipboard && navigator.clipboard.writeText) {

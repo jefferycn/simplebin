@@ -88,8 +88,10 @@ function rowHTML(it) {
   }
   const from = it.shared_from_username
     ? '<div class="row-from">来自 ' + esc(it.shared_from_username) + ' 的分享</div>' : '';
+  // 卡片头只放类型与时间，不放标题：文本/链接的标题就是内容开头，
+  // 和下面的摘要重复，超长时还会把卡片撑得很高。
   return '<div class="item-row" data-id="' + it.id + '">' +
-    '<div class="row-head"><span class="row-title">' + typeIcon(it.type) + ' ' + esc(it.title || it.id) + '</span>' +
+    '<div class="row-head"><span class="row-kind">' + typeIcon(it.type) + ' ' + typeLabel(it.type) + '</span>' +
     '<span class="row-meta">' + fmtTime(it.created_at) + '</span>' +
     '<div class="row-menu"><button class="menu-btn" data-menu-btn aria-label="更多操作">⋯</button>' +
     '<div class="menu-pop" hidden>' + menuItems(it) + '</div></div></div>' +

@@ -72,18 +72,19 @@ func absURL(r *http.Request, path string) string {
 }
 
 // legacyContent 是 v1 GET 接口的 Content 形状：id / type / body。
-// 文本的 body 是内容本身；链接的 body 是分享链接（无分享链接时自动生成一个，
-// 生成失败则退回原始链接）；文件/图片的 body 是该条目的绝对地址。
+// 文本的 body 是内容本身；链接、图片、文件的 body 是分享链接
+// （无分享链接时自动生成一个，生成失败则退回旧行为：链接给原始链接，
+// 图片/文件给条目地址）。
 func (a *App) legacyContent(r *http.Request, it *Item) map[string]string {
 	body := it.Body
-	switch it.Type {
-	case "link":
-		// 链接默认给分享链接：对方无需登录就能打开。
+	if it.Type == "image" || it.Type == "file" {
+		body = absURL(r, "/"+it.ID)
+	}
+	if it.Type != "text" {
+		// 链接、图片、文件默认给分享链接：对方无需登录就能打开。
 		if token, err := a.ensureShareToken(it); err == nil {
 			body = absURL(r, "/s/"+token)
 		}
-	case "image", "file":
-		body = absURL(r, "/"+it.ID)
 	}
 	return map[string]string{"id": it.ID, "type": it.Type, "body": body}
 }

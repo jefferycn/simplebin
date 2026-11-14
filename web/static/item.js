@@ -34,8 +34,11 @@ async function loadItem() {
       '<button class="btn" id="cancelEdit">取消</button></p></div>';
   } else if (item.type === 'image') {
     html += '<p><img class="detail-img" id="detailImg" src="/api/v1/items/' + item.id + '/blob" alt="' + esc(item.title) + '"></p>';
+  } else if (item.snippet) {
+    // 文本文件：文件名已是标题，不再重复显示；预览区先占位，取回文件头再填上
+    html += '<pre class="detail-text" id="filePreview">加载预览中…</pre>';
   } else {
-    html += '<p>📎 ' + esc(item.filename) + ' · ' + fmtSize(item.size) + '</p>';
+    html += '<p class="muted">此文件无法预览，请下载查看。</p>';
   }
 
   html += '<div class="btn-row" style="margin-top:16px">';
@@ -67,6 +70,22 @@ async function loadItem() {
 
   const img = el.querySelector('#detailImg');
   if (img) img.addEventListener('click', () => window.SimpleBinViewer && window.SimpleBinViewer.openById(item.id));
+
+  // 文本文件预览：只取文件头 16KB（Range 请求，不用下载整个文件），
+  // 比卡片上 200 字的摘要多得多；文件更大时注明只显示了前 16KB。
+  const preview = el.querySelector('#filePreview');
+  if (preview) {
+    fetch('/api/v1/items/' + item.id + '/blob', {
+      credentials: 'same-origin',
+      headers: { Range: 'bytes=0-16383' },
+    }).then(async res => {
+      if (!res.ok) throw new Error('请求失败：' + res.status);
+      // 16KB 边界可能截断一个多字节字符，去掉末尾的替换符
+      const text = (await res.text()).replace(/\uFFFD$/, '');
+      const got = +(res.headers.get('Content-Length') || 0);
+      preview.textContent = text + (got > 0 && got < item.size ? '\n…（仅显示前 16 KB）' : '');
+    }).catch(() => { preview.textContent = '预览加载失败'; });
+  }
 
   // 文本编辑：原地修改
   on('#editBtn', () => {

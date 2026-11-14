@@ -69,6 +69,9 @@ func (a *App) securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
+		// 不缓存：每次都向服务器确认新版。否则主屏幕 PWA 会一直用旧的
+		// CSS/JS，部署了新版手机上还不见效（公开页自己会改成 no-store）。
+		w.Header().Set("Cache-Control", "no-cache")
 		// 不允许被嵌进 iframe；脚本/样式只允许本站与内联（内联用于少量页面脚本）
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; "+

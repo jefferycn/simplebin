@@ -86,7 +86,7 @@ async function saveTextContent(text) {
 // iOS Safari 的坑：首次弹“允许粘贴”时，用户点了允许，当次 readText 照样失败，
 // 授权只对后续调用生效——所以失败时自动重试一次，用户不用再点一回。
 // 授权过后不再弹确认，就是一次点击。读不到时提示去新建页手动粘贴。
-document.getElementById('pasteSaveBtn').addEventListener('click', async () => {
+async function doPaste() {
   let text = '';
   try {
     text = await navigator.clipboard.readText();
@@ -101,4 +101,11 @@ document.getElementById('pasteSaveBtn').addEventListener('click', async () => {
   }
   if (text && text.trim()) { saveTextContent(text); return; }
   toast('剪贴板里没有文本');
-});
+}
+
+const pasteBtn = document.getElementById('pasteSaveBtn');
+// 触屏：在 touchstart 里就触发粘贴并 preventDefault，iOS 便不会把这次
+// 点按认成长按、弹出 Paste/Speak 菜单（CSS 的 -webkit-touch-callout 拦不住
+// 这种由点按触发的菜单）；click 留给鼠标/桌面端。
+pasteBtn.addEventListener('touchstart', e => { e.preventDefault(); doPaste(); }, { passive: false });
+pasteBtn.addEventListener('click', () => doPaste());

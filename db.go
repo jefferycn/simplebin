@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS items (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_items_share_token ON items(share_token) WHERE share_token != '';
 CREATE INDEX IF NOT EXISTS idx_items_owner_created ON items(owner_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_items_owner_type ON items(owner_id, type);
+CREATE INDEX IF NOT EXISTS idx_items_owner_sha_type ON items(owner_id, sha256, type);
 
 CREATE TABLE IF NOT EXISTS api_tokens (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,

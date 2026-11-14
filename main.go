@@ -32,6 +32,9 @@ func main() {
 	defer store.Close()
 
 	app := &App{store: store, limiter: newLoginLimiter(), secureCookies: secureCookies}
+	if n := app.deduplicateExisting(); n > 0 {
+		log.Printf("去重：合并了 %d 张重复卡片", n)
+	}
 	mux := app.routes()
 
 	srv := &http.Server{

@@ -384,10 +384,86 @@ func (s *Store) ListItems(ownerID int64, f ListFilter) ([]*Item, int, error) {
 		if err != nil {
 			return nil, 0, err
 		}
-		it.Body = "" // 列表不带全文，snippet 已够显示
+		// 只有内容在 blob 文件里（超长文本/文件/图片）才不带 body；
+		// 短文本的 body 在 DB 里，列表要带上——点按复制必须同步拿到全文，
+		// 现取会丢 iOS 手势导致复制失败。
+		if it.BlobPath != "" {
+			it.Body = ""
+		}
 		out = append(out, it)
 	}
 	return out, total, rows.Err()
+}
+
+// FindItemByHash 找同一用户下内容与类型都相同的最新条目（去重用）。
+// 没有返回 errNotFound。
+func (s *Store) FindItemByHash(ownerID int64, sha, typ string) (*Item, error) {
+	return scanItem(s.db.QueryRow(
+		`SELECT `+itemColumns+` FROM items i LEFT JOIN users u ON u.id = i.shared_from_user_id
+		 WHERE i.owner_id = ? AND i.sha256 = ? AND i.type = ? ORDER BY i.created_at DESC LIMIT 1`,
+		ownerID, sha, typ))
+}
+
+// TouchItem 把条目的创建/更新时间刷新到 now（重复粘贴时把旧卡顶到最前面）。
+func (s *Store) TouchItem(id, now string) error {
+	_, err := s.db.Exec(`UPDATE items SET created_at = ?, updated_at = ? WHERE id = ?`, now, now, id)
+	return err
+}
+
+// dupGroup 是一组重复内容：同一用户的同类型同哈希条目。
+type dupGroup struct {
+	OwnerID int64
+	SHA256  string
+	Type    string
+}
+
+// DuplicateGroups 返回内容重复的分组（每组至少两条）。
+func (s *Store) DuplicateGroups() ([]dupGroup, error) {
+	rows, err := s.db.Query(
+		`SELECT owner_id, sha256, type FROM items GROUP BY owner_id, sha256, type HAVING COUNT(*) > 1`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []dupGroup
+	for rows.Next() {
+		var g dupGroup
+		if err := rows.Scan(&g.OwnerID, &g.SHA256, &g.Type); err != nil {
+			return nil, err
+		}
+		out = append(out, g)
+	}
+	return out, rows.Err()
+}
+
+// ListItemsByHash 返回该重复分组的全部条目（最新在前）。
+func (s *Store) ListItemsByHash(ownerID int64, sha, typ string) ([]*Item, error) {
+	rows, err := s.db.Query(
+		`SELECT `+itemColumns+` FROM items i LEFT JOIN users u ON u.id = i.shared_from_user_id
+		 WHERE i.owner_id = ? AND i.sha256 = ? AND i.type = ? ORDER BY i.created_at DESC`,
+		ownerID, sha, typ)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*Item
+	for rows.Next() {
+		it, err := scanItem(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
+// IsItemPinned 查条目是否被置顶到 fast（去重合并时优先保留）。
+func (s *Store) IsItemPinned(itemID string) (bool, error) {
+	var n int
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM fast_pins WHERE item_id = ?`, itemID).Scan(&n); err != nil {
+		return false, err
+	}
+	return n > 0, nil
 }
 
 // TotalSize 返回某用户全部条目的总字节数（历史页页脚展示）。

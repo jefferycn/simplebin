@@ -3,11 +3,13 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -44,6 +46,17 @@ func (a *App) createTextItem(ownerID int64, text string) (*Item, error) {
 	it.SHA256 = hex.EncodeToString(sum[:])
 	it.Size = int64(len(it.Body))
 	it.Mime = "text/plain; charset=utf-8"
+	// 去重：同一用户粘过完全一样的内容（同类型同哈希），不建新卡，
+	// 只把旧卡的时间刷新到现在、顶到最前面（ID 不变，分享链接与置顶不受影响）。
+	if old, err := a.store.FindItemByHash(ownerID, it.SHA256, it.Type); err == nil {
+		if err := a.store.TouchItem(old.ID, now); err != nil {
+			return nil, err
+		}
+		old.CreatedAt, old.UpdatedAt = now, now
+		return old, nil
+	} else if !errors.Is(err, errNotFound) {
+		return nil, err
+	}
 	if len(it.Body) >= maxInlineText {
 		// 超长文本落盘
 		it.BlobPath = blobPathFor(it.ID)
@@ -118,6 +131,19 @@ func (a *App) createFileItem(ownerID int64, filename string, src io.Reader) (*It
 		it.Type = "file"
 	}
 	f.Close()
+	// 去重：同一用户传过字节完全一样的文件（同类型同哈希），不建新卡，
+	// 只把旧卡顶到最前面；临时文件直接删掉，不落盘（沿用第一次的文件名）。
+	if old, err := a.store.FindItemByHash(ownerID, it.SHA256, it.Type); err == nil {
+		os.Remove(tmpPath)
+		if err := a.store.TouchItem(old.ID, now); err != nil {
+			return nil, err
+		}
+		old.CreatedAt, old.UpdatedAt = now, now
+		return old, nil
+	} else if !errors.Is(err, errNotFound) {
+		os.Remove(tmpPath)
+		return nil, err
+	}
 	final := a.store.blobFile(it.BlobPath)
 	if err := os.MkdirAll(filepath.Dir(final), 0o755); err != nil {
 		os.Remove(tmpPath)
@@ -227,6 +253,50 @@ func (a *App) deleteItem(it *Item) error {
 		os.Remove(a.store.blobFile(it.BlobPath))
 	}
 	return nil
+}
+
+// deduplicateExisting 合并启动前已存在的重复卡片（去重上线前粘出来的）。
+// 每组只留一张：优先留被置顶到 fast 或已生成分享链接的，否则留最新的；
+// 其余的连同磁盘文件一起删。返回合并掉的张数；失败只记日志，不阻止启动。
+func (a *App) deduplicateExisting() int {
+	groups, err := a.store.DuplicateGroups()
+	if err != nil {
+		log.Printf("去重扫描失败: %v", err)
+		return 0
+	}
+	merged := 0
+	for _, g := range groups {
+		items, err := a.store.ListItemsByHash(g.OwnerID, g.SHA256, g.Type)
+		if err != nil || len(items) < 2 {
+			continue
+		}
+		keep := items[0] // 默认留最新的
+		for _, it := range items {
+			if it.ShareToken != "" {
+				keep = it
+				break
+			}
+			if pinned, _ := a.store.IsItemPinned(it.ID); pinned {
+				keep = it
+				break
+			}
+		}
+		// 留下的不是最新的：把它的时间刷到最新那张，保持它在列表最前面的位置
+		if keep.ID != items[0].ID && items[0].CreatedAt > keep.CreatedAt {
+			a.store.TouchItem(keep.ID, items[0].CreatedAt)
+		}
+		for _, it := range items {
+			if it.ID == keep.ID {
+				continue
+			}
+			if err := a.deleteItem(it); err != nil {
+				log.Printf("去重删除 %s 失败: %v", it.ID, err)
+				continue
+			}
+			merged++
+		}
+	}
+	return merged
 }
 
 // shareItemToUser 把条目分享给另一个用户：复制语义，新记录归对方所有，

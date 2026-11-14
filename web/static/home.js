@@ -1,4 +1,6 @@
-// 首页：最新三条卡片（点按复制/查看/下载）+ 粘贴按钮。
+// 首页：最新三条卡片 + 粘贴按钮。
+// 点卡片复制（文本/链接复制全文，图片/文件复制下载链接），
+// 点图片缩略图打开查看器；下载在历史页 ⋯ 菜单里。
 // 手动输入文本与文件上传已移到 /new（new.js）。
 
 let recentItems = [];
@@ -41,18 +43,15 @@ function cardHTML(it) {
   if (it.shared_from_username) {
     html += '<div class="row-from">来自 ' + esc(it.shared_from_username) + ' 的分享</div>';
   }
-  let hint = '点按复制';
   if (it.type === 'text' || it.type === 'link') {
     html += '<p class="snippet">' + esc(it.snippet || it.body || '') + '</p>';
   } else if (it.type === 'image') {
     html += '<img class="thumb" src="/api/v1/items/' + it.id + '/blob" alt="' + esc(it.title) + '">';
-    hint = '点图片查看 · 点卡片复制下载链接';
+    html += '<p class="snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
   } else {
     html += '<p class="snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
     if (it.snippet) html += '<p class="snippet">' + esc(it.snippet) + '</p>';
-    hint = '点按复制下载链接';
   }
-  html += '<div class="card-hint">' + hint + '</div>';
   return '<div class="latest-card clickable" data-id="' + it.id + '">' + html + '</div>';
 }
 

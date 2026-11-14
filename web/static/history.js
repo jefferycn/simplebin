@@ -64,9 +64,13 @@ async function loadList() {
     listEl.querySelectorAll('.item-row').forEach(row => {
       const item = currentItems.find(i => i.id === row.dataset.id);
       // 点卡片本身就是复制（文本/链接复制全文，图片/文件复制下载地址）；
-      // 点按钮不触发，详情页改走「详情」按钮。
+      // 图片点缩略图打开查看器；点按钮不触发，详情页改走「详情」按钮。
       row.addEventListener('click', async e => {
         if (e.target.closest('button, a')) return;
+        if (item.type === 'image' && e.target.closest('img.row-thumb')) {
+          if (window.SimpleBinViewer) window.SimpleBinViewer.openById(item.id);
+          return;
+        }
         try { await copyItem(item); } catch (err) { toast(err.message); }
       });
       bindRowActions(row, item);
@@ -82,7 +86,8 @@ function rowHTML(it) {
   if (it.type === 'text' || it.type === 'link') {
     body = '<p class="row-snippet">' + esc(it.snippet || '') + '</p>';
   } else if (it.type === 'image') {
-    body = '<img class="row-thumb" loading="lazy" src="/api/v1/items/' + it.id + '/blob" alt="' + esc(it.title) + '">';
+    body = '<img class="row-thumb" loading="lazy" src="/api/v1/items/' + it.id + '/blob" alt="' + esc(it.title) + '">' +
+      '<p class="row-snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
   } else {
     body = '<p class="row-snippet">📎 ' + esc(it.filename) + ' · ' + fmtSize(it.size) + '</p>';
     if (it.snippet) body += '<p class="row-snippet">' + esc(it.snippet) + '</p>';

@@ -65,7 +65,6 @@ label { display: block; margin: 12px 0 4px; font-size: 14px; color: var(--muted)
 .latest-card.clickable:active { transform: scale(.98); opacity: .85; }
 .latest-card .thumb { max-width: 100%; max-height: 240px; border-radius: 14px; display: block; margin-top: 8px; }
 .latest-card .snippet { white-space: pre-wrap; word-break: break-all; margin: 8px 0 0; color: var(--fg); }
-.card-hint { font-size: 13px; color: var(--muted); margin-top: 10px; }
 /* 首页：右下角悬浮粘贴按钮（bin 图标，点按粘贴剪贴板） */
 .home { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 .fab { position: fixed; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom));

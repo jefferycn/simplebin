@@ -1,5 +1,6 @@
 // 首页：最新三条卡片 + 粘贴按钮。
-// 点卡片复制（文本/链接复制全文，图片/文件复制下载链接），
+// 点卡片标题行（类型图标 + 时间）进详情页；点其他处复制
+// （文本/链接复制全文，图片/文件复制下载链接），
 // 点图片缩略图打开查看器；下载在历史页 ⋯ 菜单里。
 // 手动输入文本与文件上传已移到 /new（new.js）。
 
@@ -38,7 +39,7 @@ async function refreshRecent() {
 }
 
 function cardHTML(it) {
-  let html = '<div class="muted">' + typeIcon(it.type) + ' ' + typeLabel(it.type) +
+  let html = '<div class="muted card-title">' + typeIcon(it.type) + ' ' + typeLabel(it.type) +
     ' · ' + fmtTime(it.created_at) + '</div>';
   if (it.shared_from_username) {
     html += '<div class="row-from">来自 ' + esc(it.shared_from_username) + ' 的分享</div>';
@@ -56,10 +57,15 @@ function cardHTML(it) {
   return '<div class="latest-card clickable" data-id="' + it.id + '">' + html + '</div>';
 }
 
-// 点卡片：文本/链接复制全文，图片/文件复制下载链接；
+// 点卡片：点标题行进详情页，点其他处复制
+// （文本/链接复制全文，图片/文件复制下载链接）；
 // 图片点缩略图才打开查看器（下载改走历史页 ⋯ 菜单）。
 async function onCardClick(e, it) {
   try {
+    if (e.target.closest('.card-title')) {
+      location.href = '/item/' + it.id;
+      return;
+    }
     if (it.type === 'image' && e.target.closest('img.thumb')) {
       if (window.SimpleBinViewer) window.SimpleBinViewer.openById(it.id);
       return;

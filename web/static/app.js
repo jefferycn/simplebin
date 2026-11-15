@@ -161,9 +161,10 @@ async function initTopbar() {
       if (touchX - e.changedTouches[0].clientX > 60) closeDrawer();
       touchX = null;
     }, { passive: true });
-    // 当前页高亮（详情页归到历史；新建页没有对应菜单项，不高亮）
+    // 当前页高亮（详情页归到历史）
     const path = location.pathname;
     const current = path === '/' ? 'home'
+      : path === '/new' ? 'new'
       : path === '/history' || path.startsWith('/item/') ? 'history'
       : path === '/settings' ? 'settings'
       : path === '/admin' ? 'admin' : null;

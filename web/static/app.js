@@ -125,18 +125,57 @@ function confirmModal(title, body, okText, onOk) {
 }
 
 // ---------- 顶栏 ----------
-// 每页加载时调一次：⋯ 菜单开关、管理员显示“管理”入口、登出按钮绑事件。
+// 每页加载时调一次：抽屉菜单开关、当前页高亮、历史条目数、
+// 管理员显示“管理”入口、登出按钮绑事件。
+// 带防重复守卫：重复调用不得重复绑定（否则菜单点一次开关两次）。
+let topbarBound = false;
 async function initTopbar() {
-  const menuBtn = document.getElementById('topMenuBtn');
-  const menuPop = document.getElementById('topMenuPop');
-  if (menuBtn && menuPop) {
-    menuBtn.addEventListener('click', e => {
-      e.stopPropagation(); // 历史页的 document 监听会关所有菜单，先拦住
-      menuPop.hidden = !menuPop.hidden;
+  if (topbarBound) return;
+  topbarBound = true;
+  const burger = document.getElementById('burgerBtn');
+  const drawer = document.getElementById('drawer');
+  const scrim = document.getElementById('scrim');
+  if (burger && drawer && scrim) {
+    const openDrawer = () => {
+      drawer.classList.add('open');
+      scrim.classList.add('show');
+      burger.classList.add('open');
+      document.body.classList.add('drawer-open');
+    };
+    const closeDrawer = () => {
+      drawer.classList.remove('open');
+      scrim.classList.remove('show');
+      burger.classList.remove('open');
+      document.body.classList.remove('drawer-open');
+    };
+    burger.addEventListener('click', () => {
+      drawer.classList.contains('open') ? closeDrawer() : openDrawer();
     });
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.topbar-menu')) menuPop.hidden = true;
-    });
+    scrim.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+    // 左滑抽屉关闭
+    let touchX = null;
+    drawer.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+    drawer.addEventListener('touchend', e => {
+      if (touchX === null) return;
+      if (touchX - e.changedTouches[0].clientX > 60) closeDrawer();
+      touchX = null;
+    }, { passive: true });
+    // 当前页高亮（详情页归到历史；新建页没有对应菜单项，不高亮）
+    const path = location.pathname;
+    const current = path === '/' ? 'home'
+      : path === '/history' || path.startsWith('/item/') ? 'history'
+      : path === '/settings' ? 'settings'
+      : path === '/admin' ? 'admin' : null;
+    if (current) {
+      const item = drawer.querySelector('[data-nav="' + current + '"]');
+      if (item) item.classList.add('current');
+    }
+    // 历史条目数，失败就留空，不挡主流程
+    api('/api/v1/items?page=1&per_page=1').then(d => {
+      const el = document.getElementById('historyCount');
+      if (el && typeof d.total === 'number') el.textContent = d.total + ' 条';
+    }).catch(() => {});
   }
   const btn = document.getElementById('logoutBtn');
   if (btn) btn.onclick = async () => {

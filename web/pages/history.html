@@ -52,24 +52,22 @@
   <h1>历史记录</h1>
   <div class="filters">
     <input type="search" id="q" placeholder="搜索标题 / 内容…">
-    <select id="typeFilter">
-      <option value="all">全部类型</option>
-      <option value="text">文本</option>
-      <option value="link">链接</option>
-      <option value="image">图片</option>
-      <option value="file">文件</option>
-    </select>
-    <select id="sortSelect">
-      <option value="newest">最新优先</option>
-      <option value="oldest">最旧优先</option>
-      <option value="size">按大小</option>
-      <option value="type">按类型</option>
-    </select>
+  </div>
+  <div class="chips" id="chips">
+    <button class="fchip" data-filter="type"><span class="label">全部类型</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="fchip" data-filter="sort"><span class="label">最新优先</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="clear-all" id="clearAll" hidden>清除全部</button>
   </div>
   <div id="list"><p class="muted">加载中…</p></div>
   <div class="pager" id="pager"></div>
   <p class="stats" id="stats"></p>
 </main>
+<div class="sheet-scrim" id="sheetScrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-label="选择">
+  <div class="handle"></div>
+  <h3 id="sheetTitle">选择</h3>
+  <div id="sheetOpts"></div>
+</div>
 <div id="toast"></div>
 <script src="/static/app.js"></script>
 <script src="/static/history.js"></script>

@@ -1,10 +1,49 @@
 // 历史页：排序 / 筛选 / 搜索 / 分页，每行可操作。
+// 筛选是胶囊 + 底部选择器（同 ReceiptBin v2.1），筛选进地址栏，刷新还在。
 
-let state = { q: '', type: 'all', sort: 'newest', page: 1, per_page: 50 };
+const params = new URLSearchParams(location.search);
+
+// 选项与默认值（地址栏带非法值时退回默认）
+const OPTIONS = {
+  type: [
+    { v: 'all', label: '全部类型' },
+    { v: 'text', label: '文本' },
+    { v: 'link', label: '链接' },
+    { v: 'image', label: '图片' },
+    { v: 'file', label: '文件' },
+  ],
+  sort: [
+    { v: 'newest', label: '最新优先' },
+    { v: 'oldest', label: '最旧优先' },
+    { v: 'size', label: '按大小' },
+    { v: 'type', label: '按类型' },
+  ],
+};
+const DEFAULTS = { type: 'all', sort: 'newest' };
+const TITLES = { type: '选择类型', sort: '选择排序' };
+
+let state = {
+  q: params.get('q') || '',
+  type: params.get('type') || 'all',
+  sort: params.get('sort') || 'newest',
+  page: 1, per_page: 50,
+};
+if (!OPTIONS.type.some(o => o.v === state.type)) state.type = 'all';
+if (!OPTIONS.sort.some(o => o.v === state.sort)) state.sort = 'newest';
 let currentItems = [];
 let searchTimer = null;
 
+const chipsEl = document.getElementById('chips');
+const clearAll = document.getElementById('clearAll');
+const sheet = document.getElementById('sheet');
+const sheetScrim = document.getElementById('sheetScrim');
+const sheetTitle = document.getElementById('sheetTitle');
+const sheetOpts = document.getElementById('sheetOpts');
+let openFilter = null;
+
 initTopbar();
+document.getElementById('q').value = state.q; // 搜索框按地址栏初始值回填
+renderChips();
 loadList();
 
 // 点卡片菜单以外的地方，关掉所有打开的菜单。
@@ -22,17 +61,89 @@ document.getElementById('q').addEventListener('input', e => {
   searchTimer = setTimeout(() => {
     state.q = e.target.value.trim();
     state.page = 1;
+    syncURL();
     loadList();
   }, 300);
 });
-document.getElementById('typeFilter').addEventListener('change', e => {
-  state.type = e.target.value;
+
+function labelFor(key, val) {
+  const o = OPTIONS[key].find(o => o.v === val);
+  return o ? o.label : OPTIONS[key][0].label;
+}
+
+function renderChips() {
+  chipsEl.querySelectorAll('.fchip').forEach(chip => {
+    const key = chip.dataset.filter;
+    const val = state[key];
+    const active = val !== DEFAULTS[key];
+    chip.querySelector('.label').textContent = labelFor(key, val);
+    chip.classList.toggle('active', active);
+    let x = chip.querySelector('.x');
+    if (active && !x) {
+      x = document.createElement('span');
+      x.className = 'x';
+      x.textContent = '✕';
+      x.addEventListener('click', e => { e.stopPropagation(); setFilter(key, DEFAULTS[key]); });
+      chip.appendChild(x);
+    } else if (!active && x) x.remove();
+  });
+  clearAll.hidden = !(state.type !== 'all' || state.sort !== 'newest');
+}
+
+function setFilter(key, val) {
+  state[key] = val;
   state.page = 1;
+  syncURL();
+  renderChips();
   loadList();
+}
+
+// 筛选进地址栏（replaceState，不污染历史），刷新与分享都保持筛选
+function syncURL() {
+  const q = new URLSearchParams();
+  if (state.q) q.set('q', state.q);
+  if (state.type !== 'all') q.set('type', state.type);
+  if (state.sort !== 'newest') q.set('sort', state.sort);
+  history.replaceState(null, '', q.toString() ? '/history?' + q : '/history');
+}
+
+function openSheet(key) {
+  openFilter = key;
+  sheetTitle.textContent = TITLES[key];
+  sheetOpts.innerHTML = OPTIONS[key].map(o =>
+    '<button class="opt' + (o.v === state[key] ? ' sel' : '') + '" data-v="' + esc(o.v) + '">' +
+    esc(o.label) + '<span class="tick">✓</span></button>').join('');
+  sheet.classList.add('open');
+  sheetScrim.classList.add('show');
+}
+function closeSheet() { sheet.classList.remove('open'); sheetScrim.classList.remove('show'); openFilter = null; }
+
+chipsEl.querySelectorAll('.fchip').forEach(chip => {
+  chip.addEventListener('click', () => openSheet(chip.dataset.filter));
 });
-document.getElementById('sortSelect').addEventListener('change', e => {
-  state.sort = e.target.value;
+sheetOpts.addEventListener('click', e => {
+  const btn = e.target.closest('.opt');
+  if (!btn || !openFilter) return;
+  const val = btn.dataset.v;
+  const key = openFilter;
+  closeSheet();
+  if (val !== state[key]) setFilter(key, val);
+});
+sheetScrim.addEventListener('click', closeSheet);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+// 下滑选择器关闭
+let sheetY = null;
+sheet.addEventListener('touchstart', e => { sheetY = e.touches[0].clientY; }, { passive: true });
+sheet.addEventListener('touchend', e => {
+  if (sheetY !== null && e.changedTouches[0].clientY - sheetY > 70) closeSheet();
+  sheetY = null;
+}, { passive: true });
+clearAll.addEventListener('click', () => {
+  state.type = 'all';
+  state.sort = 'newest';
   state.page = 1;
+  syncURL();
+  renderChips();
   loadList();
 });
 

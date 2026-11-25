@@ -328,6 +328,33 @@ func (a *App) deleteItemHandler(w http.ResponseWriter, r *http.Request, u *User)
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
+// bulkDeleteHandler 批量删除：DELETE /api/v1/items，body {ids: [...]}。
+// 只删自己的条目，不存在或不属于自己的跳过；返回实际删掉的张数。
+func (a *App) bulkDeleteHandler(w http.ResponseWriter, r *http.Request, u *User) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || len(req.IDs) == 0 {
+		writeErr(w, http.StatusBadRequest, "请求格式错误")
+		return
+	}
+	if len(req.IDs) > 200 {
+		writeErr(w, http.StatusBadRequest, "一次最多删除 200 条")
+		return
+	}
+	deleted := 0
+	for _, id := range req.IDs {
+		it, err := a.store.GetItem(id)
+		if err != nil || it.OwnerID != u.ID {
+			continue
+		}
+		if err := a.deleteItem(it); err == nil {
+			deleted++
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"deleted": deleted})
+}
+
 // blobHandler 下载条目文件：图片默认 inline（查看器与 <img> 直接用），
 // ?download=1 时强制 attachment。
 func (a *App) blobHandler(w http.ResponseWriter, r *http.Request, u *User) {

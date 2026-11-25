@@ -112,18 +112,6 @@ function closeModal() {
   document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
 }
 
-// confirmModal 简单确认框，点确定执行 onOk。
-function confirmModal(title, body, okText, onOk) {
-  const m = openModal('<h3>' + esc(title) + '</h3><p>' + esc(body) + '</p>' +
-    '<div class="btn-row"><button class="btn danger" id="mOk">' + esc(okText) + '</button>' +
-    '<button class="btn" id="mCancel">取消</button></div>');
-  m.querySelector('#mCancel').onclick = closeModal;
-  m.querySelector('#mOk').onclick = async () => {
-    try { await onOk(); } catch (e) { toast(e.message); return; }
-    closeModal();
-  };
-}
-
 // ---------- 顶栏 ----------
 // 每页加载时调一次：抽屉菜单开关、当前页高亮、历史条目数、
 // 管理员显示“管理”入口、登出按钮绑事件。
@@ -193,12 +181,11 @@ async function initTopbar() {
 
 // ---------- 条目通用操作（历史页与详情页共用） ----------
 
-async function deleteItem(id, title, after) {
-  confirmModal('删除条目', '确定删除“' + (title || id) + '”吗？文件会一起删除，无法恢复。', '删除', async () => {
-    await api('/api/v1/items/' + id, { method: 'DELETE' });
-    toast('已删除');
-    if (after) after();
-  });
+// 删除条目：直接删除，不弹确认框。
+async function deleteItem(id, after) {
+  await api('/api/v1/items/' + id, { method: 'DELETE' });
+  toast('已删除');
+  if (after) after();
 }
 
 // 分享链接弹窗：已分享显示链接与关闭按钮，未分享显示开启按钮。

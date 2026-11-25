@@ -57,6 +57,7 @@
     <button class="fchip" data-filter="type"><span class="label">全部类型</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <button class="fchip" data-filter="sort"><span class="label">最新优先</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <button class="clear-all" id="clearAll" hidden>清除全部</button>
+    <button class="fchip" id="batchBtn">批量删除</button>
   </div>
   <div id="list"><p class="muted">加载中…</p></div>
   <div class="pager" id="pager"></div>
@@ -67,6 +68,11 @@
   <div class="handle"></div>
   <h3 id="sheetTitle">选择</h3>
   <div id="sheetOpts"></div>
+</div>
+<div class="batchbar" id="batchBar">
+  <button class="btn" id="batchAll">全选</button>
+  <button class="btn danger" id="batchDelete" disabled>删除选中（0）</button>
+  <button class="btn" id="batchCancel">取消</button>
 </div>
 <div id="toast"></div>
 <script src="/static/app.js"></script>

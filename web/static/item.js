@@ -66,7 +66,7 @@ async function loadItem() {
   on('#shareLinkBtn', () => shareLinkModal(item, loadItem));
   on('#shareUserBtn', () => shareToUserModal(item));
   on('#fastBtn', () => fastPinModal(item));
-  on('#delBtn', () => deleteItem(item.id, item.title, () => { location.href = '/history'; }));
+  on('#delBtn', () => deleteItem(item.id, () => { location.href = '/history'; }));
 
   const img = el.querySelector('#detailImg');
   if (img) img.addEventListener('click', () => window.SimpleBinViewer && window.SimpleBinViewer.openById(item.id));

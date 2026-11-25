@@ -141,6 +141,7 @@ func (a *App) routes() *http.ServeMux {
 	mux.HandleFunc("GET /api/v1/items/{id}", a.requireAPI(a.getItemHandler))
 	mux.HandleFunc("PUT /api/v1/items/{id}", a.requireAPI(a.updateItemHandler))
 	mux.HandleFunc("DELETE /api/v1/items/{id}", a.requireAPI(a.deleteItemHandler))
+	mux.HandleFunc("DELETE /api/v1/items", a.requireAPI(a.bulkDeleteHandler))
 	mux.HandleFunc("GET /api/v1/items/{id}/blob", a.requireAPI(a.blobHandler))
 	mux.HandleFunc("POST /api/v1/items/{id}/share-link", a.requireAPI(a.createShareLinkHandler))
 	mux.HandleFunc("DELETE /api/v1/items/{id}/share-link", a.requireAPI(a.deleteShareLinkHandler))

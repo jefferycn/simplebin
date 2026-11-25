@@ -173,6 +173,18 @@ label { display: block; margin: 12px 0 4px; font-size: 14px; color: var(--muted)
 .fab, .menu-btn, .btn, .latest-card, .item-row {
   -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .item-row .row-meta { font-size: 13px; color: var(--muted); white-space: nowrap; }
+/* 批量删除：勾选框只做显示（点卡片切换选中），选中行淡蓝底 */
+.row-check { display: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent);
+  pointer-events: none; flex: none; }
+#list.selecting .row-check { display: block; }
+.item-row.selected { background: rgba(0,122,255,.08); }
+/* 批量删除底部操作栏（选择模式时才显示） */
+.batchbar { display: none; position: fixed; left: 12px; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 60;
+  background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,.6); border-radius: 18px; box-shadow: var(--shadow);
+  padding: 10px; gap: 8px; }
+.batchbar.show { display: flex; }
+.batchbar .btn { flex: 1; padding: 10px 8px; }
 /* 卡片右上角 ⋯ 菜单 */
 .row-menu { position: relative; flex: none; }
 .menu-btn { border: none; background: var(--chip); color: var(--fg);

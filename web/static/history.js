@@ -1,5 +1,6 @@
 // 历史页：排序 / 筛选 / 搜索 / 分页，每行可操作。
 // 筛选是胶囊 + 底部选择器（同 ReceiptBin v2.1），筛选进地址栏，刷新还在。
+// 点标题行（类型 + 时间）进详情页；点其他处复制；批量删除不弹确认框。
 
 const params = new URLSearchParams(location.search);
 
@@ -32,6 +33,10 @@ if (!OPTIONS.type.some(o => o.v === state.type)) state.type = 'all';
 if (!OPTIONS.sort.some(o => o.v === state.sort)) state.sort = 'newest';
 let currentItems = [];
 let searchTimer = null;
+
+// 批量删除：进入选择模式后点卡片切换选中，底部栏删除所选。
+let selecting = false;
+const selected = new Set();
 
 const chipsEl = document.getElementById('chips');
 const clearAll = document.getElementById('clearAll');
@@ -72,7 +77,8 @@ function labelFor(key, val) {
 }
 
 function renderChips() {
-  chipsEl.querySelectorAll('.fchip').forEach(chip => {
+  // 只处理带 data-filter 的筛选胶囊，批量删除按钮也在 chips 行里但不是筛选
+  chipsEl.querySelectorAll('.fchip[data-filter]').forEach(chip => {
     const key = chip.dataset.filter;
     const val = state[key];
     const active = val !== DEFAULTS[key];
@@ -118,7 +124,7 @@ function openSheet(key) {
 }
 function closeSheet() { sheet.classList.remove('open'); sheetScrim.classList.remove('show'); openFilter = null; }
 
-chipsEl.querySelectorAll('.fchip').forEach(chip => {
+chipsEl.querySelectorAll('.fchip[data-filter]').forEach(chip => {
   chip.addEventListener('click', () => openSheet(chip.dataset.filter));
 });
 sheetOpts.addEventListener('click', e => {
@@ -174,10 +180,13 @@ async function loadList() {
     listEl.innerHTML = currentItems.map(rowHTML).join('');
     listEl.querySelectorAll('.item-row').forEach(row => {
       const item = currentItems.find(i => i.id === row.dataset.id);
-      // 点卡片本身就是复制（文本/链接复制全文，图片/文件复制下载地址）；
-      // 图片点缩略图打开查看器；点按钮不触发，详情页改走「详情」按钮。
+      // 选择模式下点卡片切换选中；否则点标题行进详情页，
+      // 点卡片其他处复制（文本/链接复制全文，图片/文件复制下载地址）；
+      // 图片点缩略图打开查看器；点按钮不触发。
       row.addEventListener('click', async e => {
         if (e.target.closest('button, a')) return;
+        if (selecting) { toggleSelect(item, row); return; }
+        if (e.target.closest('.row-title')) { location.href = '/item/' + item.id; return; }
         if (item.type === 'image' && e.target.closest('img.row-thumb')) {
           if (window.SimpleBinViewer) window.SimpleBinViewer.openById(item.id);
           return;
@@ -209,9 +218,11 @@ function rowHTML(it) {
     ? '<div class="row-from">来自 ' + esc(it.shared_from_username) + ' 的分享</div>' : '';
   // 卡片头只放类型与时间，不放标题：文本/链接的标题就是内容开头，
   // 和下面的摘要重复，超长时还会把卡片撑得很高。
-  return '<div class="item-row" data-id="' + it.id + '">' +
-    '<div class="row-head"><span class="row-kind">' + typeIcon(it.type) + ' ' + typeLabel(it.type) + '</span>' +
-    '<span class="row-meta">' + fmtTime(it.created_at) + '</span>' +
+  return '<div class="item-row' + (selected.has(it.id) ? ' selected' : '') + '" data-id="' + it.id + '">' +
+    '<div class="row-head"><input type="checkbox" class="row-check" tabindex="-1"' +
+    (selecting && selected.has(it.id) ? ' checked' : '') + '>' +
+    '<span class="row-kind row-title">' + typeIcon(it.type) + ' ' + typeLabel(it.type) + '</span>' +
+    '<span class="row-meta row-title">' + fmtTime(it.created_at) + '</span>' +
     '<div class="row-menu"><button class="menu-btn" data-menu-btn aria-label="更多操作">⋯</button>' +
     '<div class="menu-pop" hidden>' + menuItems(it) + '</div></div></div>' +
     body + from + '</div>';
@@ -220,7 +231,6 @@ function rowHTML(it) {
 // 卡片操作收进右上角 ⋯ 菜单（复制已并入卡片点击，不再单设按钮）
 function menuItems(it) {
   const b = [];
-  b.push('<button class="menu-item" data-act="detail">详情</button>');
   if (it.type === 'text' || it.type === 'link') {
     b.push('<button class="menu-item" data-act="edit">编辑</button>');
     if (it.type === 'link') b.push('<button class="menu-item" data-act="open">打开</button>');
@@ -255,7 +265,6 @@ function bindRowActions(row, item) {
       closeAllMenus();
       try {
         switch (act) {
-          case 'detail': location.href = '/item/' + item.id; break;
           case 'edit': location.href = '/item/' + item.id + '?edit=1'; break;
           case 'open': {
             const full = await api('/api/v1/items/' + item.id);
@@ -271,12 +280,80 @@ function bindRowActions(row, item) {
           case 'share-link': shareLinkModal(item, loadList); break;
           case 'share-user': shareToUserModal(item); break;
           case 'fast': fastPinModal(item); break;
-          case 'delete': deleteItem(item.id, item.title, loadList); break;
+          case 'delete': deleteItem(item.id, () => { selected.delete(item.id); updateBatchBar(); loadList(); }); break;
         }
       } catch (e) { toast(e.message); }
     });
   });
 }
+
+// ---------- 批量删除 ----------
+// 勾选框只做显示（pointer-events:none），点卡片切换选中，
+// 避免勾选框与卡片点击各管各的、双重切换。
+function updateBatchBar() {
+  const del = document.getElementById('batchDelete');
+  del.textContent = '删除选中（' + selected.size + '）';
+  del.disabled = selected.size === 0;
+}
+
+function enterSelectMode() {
+  selecting = true;
+  document.getElementById('list').classList.add('selecting');
+  document.getElementById('batchBar').classList.add('show');
+  const btn = document.getElementById('batchBtn');
+  btn.textContent = '取消';
+  btn.classList.add('active');
+  updateBatchBar();
+}
+
+function exitSelectMode() {
+  selecting = false;
+  selected.clear();
+  document.getElementById('list').classList.remove('selecting');
+  document.getElementById('batchBar').classList.remove('show');
+  const btn = document.getElementById('batchBtn');
+  btn.textContent = '批量删除';
+  btn.classList.remove('active');
+}
+
+function toggleSelect(item, row) {
+  if (selected.has(item.id)) selected.delete(item.id);
+  else selected.add(item.id);
+  const cb = row.querySelector('.row-check');
+  if (cb) cb.checked = selected.has(item.id);
+  row.classList.toggle('selected', selected.has(item.id));
+  updateBatchBar();
+}
+
+// 全选只针对当前页；已全选时再点一次取消本页全选。
+function selectAllPage() {
+  const allSelected = currentItems.length > 0 && currentItems.every(it => selected.has(it.id));
+  currentItems.forEach(it => { if (allSelected) selected.delete(it.id); else selected.add(it.id); });
+  document.querySelectorAll('#list .item-row').forEach(row => {
+    const cb = row.querySelector('.row-check');
+    if (cb) cb.checked = selected.has(row.dataset.id);
+    row.classList.toggle('selected', selected.has(row.dataset.id));
+  });
+  updateBatchBar();
+}
+
+async function deleteSelected() {
+  if (!selected.size) return;
+  let d;
+  try {
+    d = await api('/api/v1/items', { method: 'DELETE', body: JSON.stringify({ ids: [...selected] }) });
+  } catch (e) { toast(e.message); return; }
+  toast('已删除 ' + d.deleted + ' 条');
+  exitSelectMode();
+  loadList();
+}
+
+document.getElementById('batchBtn').addEventListener('click', () => {
+  if (selecting) exitSelectMode(); else enterSelectMode();
+});
+document.getElementById('batchAll').addEventListener('click', selectAllPage);
+document.getElementById('batchDelete').addEventListener('click', deleteSelected);
+document.getElementById('batchCancel').addEventListener('click', exitSelectMode);
 
 function renderPager(total) {
   const pager = document.getElementById('pager');

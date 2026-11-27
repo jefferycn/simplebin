@@ -1,6 +1,7 @@
-// 历史页：排序 / 筛选 / 搜索 / 分页，每行可操作。
+// 历史页：排序 / 筛选 / 搜索 / 分页。
 // 筛选是胶囊 + 底部选择器（同 ReceiptBin v2.1），筛选进地址栏，刷新还在。
-// 点标题行（类型 + 时间）进详情页；点其他处复制；批量删除不弹确认框。
+// 点标题行（类型 + 时间）进详情页，编辑、下载、分享等操作都在详情页；
+// 点其他处复制；批量删除不弹确认框。
 
 const params = new URLSearchParams(location.search);
 
@@ -50,16 +51,6 @@ initTopbar();
 document.getElementById('q').value = state.q; // 搜索框按地址栏初始值回填
 renderChips();
 loadList();
-
-// 点卡片菜单以外的地方，关掉所有打开的菜单。
-document.addEventListener('click', e => {
-  if (!e.target.closest('.row-menu')) closeAllMenus();
-});
-
-function closeAllMenus() {
-  document.querySelectorAll('.menu-pop:not([hidden])').forEach(m => { m.hidden = true; });
-  document.querySelectorAll('.item-row.menu-open').forEach(r => r.classList.remove('menu-open'));
-}
 
 document.getElementById('q').addEventListener('input', e => {
   clearTimeout(searchTimer);
@@ -182,9 +173,8 @@ async function loadList() {
       const item = currentItems.find(i => i.id === row.dataset.id);
       // 选择模式下点卡片切换选中；否则点标题行进详情页，
       // 点卡片其他处复制（文本/链接复制全文，图片/文件复制下载地址）；
-      // 图片点缩略图打开查看器；点按钮不触发。
+      // 图片点缩略图打开查看器。
       row.addEventListener('click', async e => {
-        if (e.target.closest('button, a')) return;
         if (selecting) { toggleSelect(item, row); return; }
         if (e.target.closest('.row-title')) { location.href = '/item/' + item.id; return; }
         if (item.type === 'image' && e.target.closest('img.row-thumb')) {
@@ -193,7 +183,6 @@ async function loadList() {
         }
         try { await copyItem(item); } catch (err) { toast(err.message); }
       });
-      bindRowActions(row, item);
     });
   }
   renderPager(data.total);
@@ -222,69 +211,8 @@ function rowHTML(it) {
     '<div class="row-head"><input type="checkbox" class="row-check" tabindex="-1"' +
     (selecting && selected.has(it.id) ? ' checked' : '') + '>' +
     '<span class="row-kind row-title">' + typeIcon(it.type) + ' ' + typeLabel(it.type) + '</span>' +
-    '<span class="row-meta row-title">' + fmtTime(it.created_at) + '</span>' +
-    '<div class="row-menu"><button class="menu-btn" data-menu-btn aria-label="更多操作">⋯</button>' +
-    '<div class="menu-pop" hidden>' + menuItems(it) + '</div></div></div>' +
+    '<span class="row-meta row-title">' + fmtTime(it.created_at) + '</span></div>' +
     body + from + '</div>';
-}
-
-// 卡片操作收进右上角 ⋯ 菜单（复制已并入卡片点击，不再单设按钮）
-function menuItems(it) {
-  const b = [];
-  if (it.type === 'text' || it.type === 'link') {
-    b.push('<button class="menu-item" data-act="edit">编辑</button>');
-    if (it.type === 'link') b.push('<button class="menu-item" data-act="open">打开</button>');
-  } else if (it.type === 'image') {
-    b.push('<button class="menu-item" data-act="view">查看</button>');
-    b.push('<button class="menu-item" data-act="download">下载</button>');
-  } else {
-    b.push('<button class="menu-item" data-act="download">下载</button>');
-  }
-  b.push('<button class="menu-item" data-act="share-link">' + (it.share_token ? '分享链接 ✓' : '分享链接') + '</button>');
-  b.push('<button class="menu-item" data-act="share-user">给用户</button>');
-  b.push('<button class="menu-item" data-act="fast">快取</button>');
-  b.push('<button class="menu-item danger" data-act="delete">删除</button>');
-  return b.join('');
-}
-
-function bindRowActions(row, item) {
-  // ⋯ 按钮开关本卡菜单（一次只开一个；卡片点击处理已忽略按钮点击，不会误复制）
-  const menuBtn = row.querySelector('[data-menu-btn]');
-  const menuPop = row.querySelector('.menu-pop');
-  menuBtn.addEventListener('click', () => {
-    const wasOpen = !menuPop.hidden;
-    closeAllMenus();
-    if (!wasOpen) {
-      menuPop.hidden = false;
-      row.classList.add('menu-open'); // 提到上层，菜单不被下一张卡盖住
-    }
-  });
-  row.querySelectorAll('[data-act]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const act = btn.dataset.act;
-      closeAllMenus();
-      try {
-        switch (act) {
-          case 'edit': location.href = '/item/' + item.id + '?edit=1'; break;
-          case 'open': {
-            const full = await api('/api/v1/items/' + item.id);
-            window.open(full.body, '_blank', 'noopener');
-            break;
-          }
-          case 'view':
-            if (window.SimpleBinViewer) window.SimpleBinViewer.openById(item.id);
-            break;
-          case 'download':
-            location.href = '/api/v1/items/' + item.id + '/blob?download=1';
-            break;
-          case 'share-link': shareLinkModal(item, loadList); break;
-          case 'share-user': shareToUserModal(item); break;
-          case 'fast': fastPinModal(item); break;
-          case 'delete': deleteItem(item.id, () => { selected.delete(item.id); updateBatchBar(); loadList(); }); break;
-        }
-      } catch (e) { toast(e.message); }
-    });
-  });
 }
 
 // ---------- 批量删除 ----------
